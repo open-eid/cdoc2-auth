@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>ee.cyber.cdoc2.auth</groupId>
+    <artifactId>cdoc2-key-shares-auth</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <description>
+        CDOC2 multi servers authentication protocol library, generates/validates
+        authentication tokens used to access `/cdoc2-key-shares` endpoint
+    </description>
+
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <sd-jwt.version>1.4</sd-jwt.version>
+        <logback.version>1.5.7</logback.version>
+        <nimbus-jose-jwt.version>9.41.2</nimbus-jose-jwt.version>
+        <junit-jupiter.version>5.10.3</junit-jupiter.version>
+    </properties>
+
+    <profiles>
+        <profile>
+            <!-- activate github profile when run by github actions -->
+            <id>github_ci</id>
+            <activation>
+                <property>
+                    <name>env.GITHUB_ACTIONS</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <distributionManagement>
+                <repository>
+                    <id>github</id> <!-- must match server.id in settings.xml -->
+                    <!--suppress UnresolvedMavenProperty -->
+                    <url>https://maven.pkg.github.com/${env.GITHUB_REPOSITORY}</url>
+                </repository>
+            </distributionManagement>
+        </profile>
+
+        <profile>
+            <!-- set gitlab profile active when run by gitlab CI -->
+            <id>gitlab_ci</id>
+            <activation>
+                <property>
+                    <name>env.GITLAB_CI</name>
+                    <value>true</value>
+                </property>
+            </activation>
+
+            <distributionManagement>
+                <!-- env variables are available, when run by gitlab CI -->
+                <repository>
+                    <id>${env.CI_SERVER_HOST}</id>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+                </repository>
+                <snapshotRepository>
+                    <id>${env.CI_SERVER_HOST}</id>
+                    <!--suppress UnresolvedMavenProperty -->
+                    <url>${env.CI_SERVER_URL}/api/v4/projects/${env.CI_PROJECT_ID}/packages/maven</url>
+                </snapshotRepository>
+            </distributionManagement>
+        </profile>
+    </profiles>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>sd-jwt</artifactId>
+            <version>${sd-jwt.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus-jose-jwt.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+    <pluginManagement>
+    <plugins>
+
+    <!--plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+
+        <configuration>
+            <configLocation>checkstyle.xml</configLocation>
+            <suppressionsLocation>checkstyle-suppressions.xml</suppressionsLocation>
+
+            <sourceDirectories>
+                <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
+                <sourceDirectory>${project.build.testSourceDirectory}</sourceDirectory>
+            </sourceDirectories>
+
+            <consoleOutput>true</consoleOutput>
+
+            <failsOnError>true</failsOnError>
+            <failOnViolation>false</failOnViolation>
+
+            <linkXRef>false</linkXRef>
+        </configuration>
+    </plugin-->
+
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.0</version>
+        <configuration>
+            <trimStackTrace>false</trimStackTrace>
+            <!--groups>${tests}</groups-->
+        </configuration>
+    </plugin>
+    </plugins>
+    </pluginManagement>
+    </build>
+
+
+</project>
