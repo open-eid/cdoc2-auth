@@ -5,7 +5,6 @@ import java.util.Objects;
 
 public class ShareAccessData {
 
-
     private final String serverBaseUrl;
     private final String shareId;
     private final String nonce;
@@ -63,5 +62,4 @@ public class ShareAccessData {
             (String)m.get(Constants.SHARE_ID),
             (String)m.get(Constants.NONCE));
     }
-
 }

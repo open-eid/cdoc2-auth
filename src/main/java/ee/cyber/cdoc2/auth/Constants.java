@@ -8,5 +8,4 @@ public final class Constants {
     public static final String SHARE_ACCESS_DATA = "shareAccessData";
 
     private Constants() {}
-
 }

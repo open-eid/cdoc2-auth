@@ -1,2 +1,2 @@
-cdoc2 key-shares auth libary implementation
+cdoc2 key-shares auth library implementation
 
