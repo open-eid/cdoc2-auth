@@ -8,7 +8,6 @@ import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jose.jwk.KeyType;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.shaded.gson.Gson;
 import com.nimbusds.jose.shaded.gson.reflect.TypeToken;
@@ -18,17 +17,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.StringReader;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
-import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Class to validate cdoc2 auth tokens, created by {@link AuthTokenCreator}
  * Validated data has the following structure:
- * {@link AuthTokenVerifier#getVerifiedClaims(String)}:
+ * {@link AuthTokenVerifier#getVerifiedClaims(String,RSAKey)}:
  * <code>
  *  {
  *      shareAccessData=[{serverNonce=59b314d4815f21f73a0b9168cecbd5773cc694b6,
@@ -41,66 +43,112 @@ import java.util.Map;
  *  }
  *  * </code>
  */
-public class AuthTokenVerifier {
+public final class AuthTokenVerifier {
     private static final Logger log = LoggerFactory.getLogger(AuthTokenVerifier.class);
 
     private static final Logger tokens_log = LoggerFactory.getLogger("tokens");
+
+    private AuthTokenVerifier() {}
 
     /**
      * Verify JWT signature, map disclosures data to signed digests. Return verified data. User must verify that matches
      * data accessed
      * @param token sdjwt created by {@link AuthTokenCreator}
+     * @param cert certificate to verify token signature with
+     * @param extractKIDFunc function to extract keyID from the certificate. This must match to JWT header kid
+     *                       or verification will fail
      * @return verified claims JsonObject
      * @throws VerificationException when token doesn't verify or missing/unsupported data
      * @throws ParseException        If the string couldn't be parsed to a valid signed JWT.
      * @throws JOSEException
      */
-    public static Map<String, Object> getVerifiedClaims(String token) throws VerificationException, JOSEException, ParseException {
+    public static Map<String, Object> getVerifiedClaims(String token, X509Certificate cert,
+                                                        Function<X509Certificate, String> extractKIDFunc)
+        throws VerificationException, JOSEException, ParseException {
+
+        Objects.requireNonNull(token);
+        Objects.requireNonNull(cert);
+        Objects.requireNonNull(extractKIDFunc);
+
+        //TODO: check that certificate is trusted and from trusted source
+
+        if (!"RSA".equals(cert.getPublicKey().getAlgorithm())) {
+            throw new VerificationException("Expected certificate public key to be RSA");
+        }
+
+        try {
+            //For Smart-ID this is in format PNOEE-30303039914
+            String subjectSerial = extractKIDFunc.apply(cert);
+            RSAKey jwk = new RSAKey.Builder((RSAPublicKey) cert.getPublicKey())
+                .keyID(subjectSerial)
+                .build();
+
+            return getVerifiedClaims(token, jwk);
+        } catch (IllegalCertificateException ex){
+            throw new VerificationException("Failed to extract keyID from certificate", ex);
+        }
+    }
+
+    /**
+     * Verify token with pubRSAJWK and return verified claims from the token
+     * @param token token to verify
+     * @param pubRSAJWK public RSA jwk to verify token with. Must have kid defined
+     * @return verified claims JsonObject as Map
+     * @throws VerificationException
+     * @throws JOSEException
+     * @throws ParseException
+     */
+    protected static Map<String, Object> getVerifiedClaims(String token, RSAKey pubRSAJWK)
+        throws VerificationException, JOSEException, ParseException {
+
         SDJWT sdJwt = SDJWT.parse(token);
 
         String jwt = sdJwt.getCredentialJwt();
         SignedJWT signedJWT = SignedJWT.parse(jwt);
         JWSHeader header = signedJWT.getHeader();
 
-        if (!JWSAlgorithm.PS256.equals(header.getAlgorithm())) { //RSASSA-PSS using SHA-256 hash algorithm and MGF1
-            throw new VerificationException("Algorithm not supported: "+ header.getAlgorithm());
+        if (!JWSAlgorithm.RS256.equals(header.getAlgorithm())) { //RSASSA-PKCS-v1_5 using SHA-256
+            throw new VerificationException("Algorithm not supported: " + header.getAlgorithm());
         }
 
         if (header.getType() == null ||
             !Constants.TYPE.equals(signedJWT.getHeader().getType().toString())
         ) {
-            throw new VerificationException("Unsupported typ "+ header.getAlgorithm());
+            throw new VerificationException("Unsupported typ " + header.getAlgorithm());
         }
 
-        if (header.getJWK() == null) {
-            throw new VerificationException("Expected jwk in header");
+        if (header.getKeyID() == null) {
+            throw new VerificationException("Expected kid in header");
         }
 
-        if (!KeyType.RSA.equals(header.getJWK().getKeyType())) {
-            throw new VerificationException("Expected jwk.kty to be RSA " + header.getJWK().getKeyType());
+        if (pubRSAJWK.getKeyID() == null) {
+            throw new VerificationException("Expected kid for pubRSAJWK");
         }
 
-        RSAKey rsaPubKey = signedJWT.getHeader().getJWK().toRSAKey();
-        //TODO: check cert for SID
-        //TODO: check that iss matches subject in cert
-
-        JWSVerifier verifier = new RSASSAVerifier(rsaPubKey);
+        JWSVerifier verifier = new RSASSAVerifier(pubRSAJWK);
 
         boolean signatureValid = signedJWT.verify(verifier);
         if (!signatureValid) {
             throw new VerificationException("JWT signature verification failed");
         }
 
+        //check that jwkKID parsed from certificate matches kid from header
+        if (!pubRSAJWK.getKeyID().equals(header.getKeyID())) {
+            throw new VerificationException("kid in JWT header doesn't match to jwkKID ("
+                + header.getKeyID() + "!=" + pubRSAJWK.getKeyID() + ")");
+        }
+
         JWTClaimsSet signedClaims = signedJWT.getJWTClaimsSet();
         Map<String, Object> signedClaimsMap = signedClaims.getClaims();
 
-        if( Instant.now().isAfter(signedClaims.getExpirationTime().toInstant()) ) {
-            throw new VerificationException("JWT is expired " + signedClaims.getExpirationTime());
-        }
-
-        if (Instant.now().isBefore(signedClaims.getIssueTime().toInstant())) {
-            throw new VerificationException("JWT is from future " + signedClaims.getIssueTime());
-        }
+        // will be removed in future tasks
+//        if( Instant.now().isAfter(signedClaims.getExpirationTime().toInstant()) ) {
+//            throw new VerificationException("JWT is expired " + signedClaims.getExpirationTime());
+//        }
+//
+//        if (Instant.now().isBefore(signedClaims.getIssueTime().toInstant())) {
+//            throw new VerificationException("JWT is from future " + signedClaims.getIssueTime());
+//        }
 
         if (tokens_log.isDebugEnabled()) {
             tokens_log.debug("Claims: {}", signedClaimsMap);
@@ -152,7 +200,6 @@ public class AuthTokenVerifier {
         return Collections.unmodifiableMap(all);
     }
 
-
     /**
      * Example disclosure, parsed from sdjwt authToken:
      * <code>
@@ -184,5 +231,4 @@ public class AuthTokenVerifier {
         String json = gson.toJson(claimValue);
         return gson.fromJson(new StringReader(json), new TypeToken<Map<String, Object>>() {}.getType());
     }
-
 }

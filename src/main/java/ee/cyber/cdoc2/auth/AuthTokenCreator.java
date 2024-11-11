@@ -8,7 +8,6 @@ import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 import org.slf4j.Logger;
@@ -67,11 +66,11 @@ import java.util.Objects;
  * </pre>
  *
  * JWT_signature is standard JWT signature, signed with private key of jwk from header.
- *
+ * <p>
  * "serverAccessData" array will be made selectively disclosable recursively
  * (https://www.ietf.org/archive/id/draft-ietf-oauth-selective-disclosure-jwt-12.html#section-5.2.6), so that signed
  * data (payload) in JWT is something like:
- *
+ * <p>
  * <code>
  * {
  *   "iss": "etsi/PNOEE-48010010101",
@@ -81,7 +80,7 @@ import java.util.Objects;
  *   "iat": 1728651577,
  *  }
  * </code>
- *
+ * <p>
  * SD_SaltAndValueContainer (disclosure1 base64urldecode data between first ~ and second ~):
  * 6s6qz3P2kc-2kYa_hwX5HKMRFVHHZd96X-hC4g4T_U0:
  * <pre>
@@ -115,7 +114,7 @@ public class AuthTokenCreator {
 
     private final EtsiIdentifier signerEtsiIdentifier;
     private final Duration expAfterDuration;
-    private final ShareAccessData shareAccessData[];
+    private final ShareAccessData[] shareAccessData;
 
     private final List<Disclosure> shareAccessDisclosureArray;
 
@@ -136,11 +135,11 @@ public class AuthTokenCreator {
      * Create shareAccessData claim where value is array of ["generated_salt", {}]
      */
     private List<Disclosure> initDisclosureArray() {
-            return Arrays.stream(shareAccessData)
-                .map(claimValue ->
-                    new Disclosure(claimValue.toMap()) // generated salt, claimValue
-                )
-                .toList();
+        return Arrays.stream(shareAccessData)
+            .map(claimValue ->
+                new Disclosure(claimValue.toMap()) // generated salt, claimValue
+            )
+            .toList();
     }
 
     /**
@@ -179,7 +178,6 @@ public class AuthTokenCreator {
         return this.disclosedShareAccessData;
     }
 
-
     /**
      * Create payload for JWT
      * <code>
@@ -204,14 +202,12 @@ public class AuthTokenCreator {
         // disclosed sharedAccessData array, see getDisclosedShareAccessData()
         builder.putSDClaim(getDisclosedShareAccessData());
 
-
         // instead selectively disclosed shareAccessData that is recursively disclosed, could use standard "aud"
         // "aud": ["https://cdoc-ccs.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3/nonce/59b314d4815f21f73a0b9168cecbd5773cc694b6",
         // "https://cdoc-ccs.smit.ee:443/key-shares/5BAE4603-C33C-4425-B301-125F2ACF9B1E/nonce/9d23660840b427f405009d970d269770417bc769"]
         // and then disclose its array elements (without recursion)
         // "aud": [{"...": "PmnlrRjhLcwf8zTDdK15HVGwHtPYjddvD362WjBLwro"},{"...":"r823HFN6Ba_lpSANYtXqqCBAH-TsQlIzfOK0lRAFLCM"}]
         // most libs restore disclosed data after verifying. It would make sdjwt "more standard" and shorter
-
 
         // Create a Map instance that represents the payload part of a
         // credential JWT. The 'claims' map contains the "_sd" array.
@@ -231,22 +227,21 @@ public class AuthTokenCreator {
     }
 
     /**
-     * Create  payload part of JWT and sign it with JWSSigner and JWK private key. (Currently only RSAsigner and matching RSA public jwk is supported)
+     * Create payload part of JWT and sign it with JWSSigner and JWK private key. (Currently only RSAsigner and matching RSA public jwk is supported)
      * @param signer jwsSigner, currently only RSASigner is supported
-     * @param jwk RSA public key jwk matching to signer
+     * @param keyID key id that identifies the signer. For now in format "PNOEE-30303039914"
      * @throws JOSEException
      * @throws ParseException
      */
     //Currently only RSASigner and RSA public jwk are supported
-    public void sign(JWSSigner signer, JWK jwk) throws JOSEException, ParseException {
+    public void sign(JWSSigner signer, String keyID) throws JOSEException, ParseException {
         //for SID certificate is available after successful authentication (that is actually signing with different key - PIN1)
         //for now use jwk (RSA)
 
         JWSHeader header =
-            new JWSHeader.Builder(JWSAlgorithm.PS256) //RSASSA-PSS using SHA-256
+            new JWSHeader.Builder(JWSAlgorithm.RS256) //RSASSA-PKCS1.5, according SID RP API doc, only signature padding that is supported
                 .type(new JOSEObjectType(Constants.TYPE))
-                .jwk(jwk)
-                //.x509CertChain() //TODO: SID certificate will be available after signing has been completed
+                .keyID(keyID)
                 .build();
 
         //log.debug("jwt_header: {}", header.toJSONObject());
@@ -294,7 +289,7 @@ public class AuthTokenCreator {
      * Create ticket (sdjwt) for share id
      * @param shareId shareId from signed shareAccessData
      * @return ticket as SDJWT
-     * @throws IllegalArgumentException if shareId
+     * @throws IllegalArgumentException if shareId was not part signed payload
      */
     public String createTicketForShareId(String shareId) {
         Objects.requireNonNull(shareId);
@@ -308,8 +303,7 @@ public class AuthTokenCreator {
         throw new IllegalArgumentException(shareId + "not found");
     }
 
-
-    static class Builder {
+    public static class Builder {
         EtsiIdentifier etsiIdentifier;
         Collection<ShareAccessData> keyShares = new LinkedList<>();
         Duration duration;
@@ -319,8 +313,23 @@ public class AuthTokenCreator {
             return this;
         }
 
+        /**
+         * Add share access data
+         * @param share to add to data to be signed
+         * @return
+         */
         public Builder withShareAccessData(ShareAccessData share){
             this.keyShares.add(share);
+            return this;
+        }
+
+        /**
+         * Add shares access data
+         * @param shares to add to data to be signed
+         * @return
+         */
+        public Builder withSharesAccessData(List<ShareAccessData> shares) {
+            this.keyShares.addAll(shares);
             return this;
         }
 
