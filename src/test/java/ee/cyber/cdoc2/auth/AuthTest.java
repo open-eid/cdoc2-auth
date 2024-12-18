@@ -1,29 +1,25 @@
 package ee.cyber.cdoc2.auth;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSSigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.util.X509CertUtils;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.KeyStore;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthTest {
 
-    Logger log = LoggerFactory.getLogger(AuthTest.class);
+    static Logger log = LoggerFactory.getLogger(AuthTest.class);
 
     // SID demo env identifier 30303039914 that automatically authenticates successfully
     private static final String SID_DEMO_IDENTIFIER = "30303039914";
 
-    // SID demo env cert for 30303039914 that automatically authenticates successfully
+    // SID demo env cert for 30303039914 (OK, TESTNUMBER) that automatically authenticates successfully
     private final String sidDemoCertStr = """
         -----BEGIN CERTIFICATE-----
         MIIIIjCCBgqgAwIBAgIQUJQ/xtShZhZmgogesEbsGzANBgkqhkiG9w0BAQsFADBoMQswCQYDVQQGEwJFRTEiMCAGA1UECgwZ
@@ -59,88 +55,130 @@ class AuthTest {
         -----END CERTIFICATE-----
         """;
 
+    private final String TEST_of_EID_SK_2016_PEM = """
+        -----BEGIN CERTIFICATE-----
+        MIIHCTCCBfGgAwIBAgIQVrOxHLphb7pfUJLPiYJRMzANBgkqhkiG9w0BAQwFADB9
+        MQswCQYDVQQGEwJFRTEiMCAGA1UECgwZQVMgU2VydGlmaXRzZWVyaW1pc2tlc2t1
+        czEwMC4GA1UEAwwnVEVTVCBvZiBFRSBDZXJ0aWZpY2F0aW9uIENlbnRyZSBSb290
+        IENBMRgwFgYJKoZIhvcNAQkBFglwa2lAc2suZWUwHhcNMjAwOTAzMDY1MzAzWhcN
+        MzAxMjE3MjE1OTU5WjBoMQswCQYDVQQGEwJFRTEiMCAGA1UECgwZQVMgU2VydGlm
+        aXRzZWVyaW1pc2tlc2t1czEXMBUGA1UEYQwOTlRSRUUtMTA3NDcwMTMxHDAaBgNV
+        BAMME1RFU1Qgb2YgRUlELVNLIDIwMTYwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAw
+        ggIKAoICAQDqyjgcqyaktULCg+LV4apGWnzzHebH8XpuolWzAAByqbzrOCGtqF3U
+        rydhY6zJebM3k+JaR8s3xAszt58e6b0Syh7n4upTMDBo7UiOgyvAYh/c+y5vpDS7
+        pzRXSIq9IT4o42yJI4PYsH2nkk/RYuedNi7Cu3boSrgpx+ztLjK0vzMpyeErQDRm
+        Nd19hbz1uKpK7W8LJoXTdAba6O9juv9zvtL256v8glrXEKwRr9/vFxAXQqh+Uv0b
+        dBLoCl+FJVcuZdEFHPCK4xrXTLK/Sg7b5lcJXn12CqC6pAu4LjBjlDX+mOAGBrD6
+        n2OHRtzeWDaeRRwy+yDvd4e06UVd4Mkd/C4ibDx5OZxEuZnT5DbhJAsoNMxCiO7i
+        eC1LgW482T6doD+zzfCKovRj+1djQs/L1FTd1qR73LbH9AzL2XVeacai2OaI8n4T
+        LFOGjHBkkAPRCvBEtztcwStQ1vm7Y20I1BVtUiMApAdsqHxcYHvr782Rm77dlBjh
+        PKAC/PyczcYvRW40wG8nKxloBDENLDNXynPjrL6GksvZt2UBqYdPnW7KLkKZd5KS
+        b4wzM8cZKzKsXYZVTK3iyhgjDMSTABkBMFUuT/dzZ5s/FG5JnqJlCa9zawaOPlfS
+        +UuCsdb07w9Ke9sUWBcn4nyzo7PKrO5Ud8oZHAT0CO/BEasb99RVgwIDAQABo4IC
+        mDCCApQwHwYDVR0jBBgwFoAUtTQKnaUvEMXnIQ6+xLFlRxsDdv4wHQYDVR0OBBYE
+        FK6w6uE2+CarpcwLZlX+Oh0CvxK0MA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8E
+        CDAGAQH/AgEAMIHEBgNVHSAEgbwwgbkwPAYHBACL7EABAjAxMC8GCCsGAQUFBwIB
+        FiNodHRwczovL3d3dy5zay5lZS9yZXBvc2l0b29yaXVtL0NQUzA8BgcEAIvsQAEA
+        MDEwLwYIKwYBBQUHAgEWI2h0dHBzOi8vd3d3LnNrLmVlL3JlcG9zaXRvb3JpdW0v
+        Q1BTMDsGBgQAj3oBAjAxMC8GCCsGAQUFBwIBFiNodHRwczovL3d3dy5zay5lZS9y
+        ZXBvc2l0b29yaXVtL0NQUzAnBgNVHSUEIDAeBggrBgEFBQcDCQYIKwYBBQUHAwIG
+        CCsGAQUFBwMEMIGOBggrBgEFBQcBAQSBgTB/MCIGCCsGAQUFBzABhhZodHRwOi8v
+        ZGVtby5zay5lZS9vY3NwMFkGCCsGAQUFBzAChk1odHRwOi8vd3d3LnNrLmVlL3Vw
+        bG9hZC9maWxlcy9URVNUX29mX0VFX0NlcnRpZmljYXRpb25fQ2VudHJlX1Jvb3Rf
+        Q0EuZGVyLmNydDBBBgNVHR4EOjA4oTYwBIICIiIwCocIAAAAAAAAAAAwIocgAAAA
+        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwJQYIKwYBBQUHAQMEGTAXMBUG
+        CCsGAQUFBwsCMAkGBwQAi+xJAQEwQwYDVR0fBDwwOjA4oDagNIYyaHR0cHM6Ly93
+        d3cuc2suZWUvcmVwb3NpdG9yeS9jcmxzL3Rlc3RfZWVjY3JjYS5jcmwwDQYJKoZI
+        hvcNAQEMBQADggEBACawLCQnjAOtDCaNejt1AqMVc8IwWy03TAAvceJd7rRSG9w2
+        Q69OxVMVhUpQ4+K+M+Fqtpkq5IWO9GFXYeYL5JwiL4rjKPk1MIunM4ZKr6f+NQBy
+        4A4oHL0ArF4QoQZuYnUS/jesjQs2HXEthcLjdSkFyaoAyfPH50c0WTMDhZj8eEIK
+        NWPEqGmGZPkAc4+ivFdl7zEC6ZaaJ6NdtihQKdFcisgv3Uyc4kuzmHK/6OtNAXpg
+        qaiLyf4L3ThQ2KA+EuDp6B97rOfV4JWC265HkAwxKd9/3fk7pwnfyMxIonW5MGcN
+        nrlYjNXNft5cr9xu2A8mPXh2ArMiZ1yif5NDvHI=
+        -----END CERTIFICATE-----""";
+
     @Test
-    void testGenerateVerifyTicket() throws ParseException, JOSEException, VerificationException {
-        EtsiIdentifier recipient = new EtsiIdentifier("PNOEE-" + SID_DEMO_IDENTIFIER);
+    void testGenerateVerifyTicket() throws Exception {
+        EtsiIdentifier recipient = new EtsiIdentifier("etsi/PNOEE-" + TestData.TEST_IDENTIFIER);
 
-        RSAKey privateKey = new RSAKeyGenerator(4096).generate();
-        RSAKey rsaPublicJWK = new RSAKey.Builder(privateKey.toRSAPublicKey())
-            .keyID(recipient.toString())
-            .build();
+        String sdjwt0  = TestData.generateTestAuthTicket(recipient.getSemanticsIdentifier(),
+            "https://css.ria.ee:443",
+            "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
+            "59b314d4815f21f73a0b9168cecbd5773cc694b6");
 
-        JWSSigner jwsSigner = new RSASSASigner(privateKey);
+        log.debug("SDJWT 0: {}", sdjwt0);
 
-        AuthTokenCreator token = AuthTokenCreator.builder()
-            .withEtsiIdentifier(recipient)
-            .withShareAccessData(new ShareAccessData(
-                "https://cdoc-ccs.ria.ee:443/key-shares/",
-                "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
-                "59b314d4815f21f73a0b9168cecbd5773cc694b6"))
-            .withShareAccessData(new ShareAccessData(
-                "https://cdoc-ccs.smit.ee:443/key-shares/",
-                "5BAE4603-C33C-4425-B301-125F2ACF9B1E",
-                "9d23660840b427f405009d970d269770417bc769"))
-            .build();
+        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(TestData.createTestIssuerTrustStore(), false);
+        Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(sdjwt0, TestData.loadTestCert());
+        log.debug("verified claims from ticket: {}", verifiedClaims);
 
-        token.sign(jwsSigner, recipient.toString());
+        assertEquals(TestData.TEST_ETSI_RECIPIENT.toString(), verifiedClaims.get("iss"));
 
-        String sdjwt0  = token.createTicketForShareId("9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3");
+        assertTrue(verifiedClaims.containsKey("aud"));
 
-        System.out.println("SDJWT 0:");
-        System.out.println(sdjwt0);
+        assertTrue(verifiedClaims.get("aud") instanceof List);
 
-        Map<String, Object> verifiedClaims = AuthTokenVerifier.getVerifiedClaims(sdjwt0, rsaPublicJWK);
-        log.debug("verified claims from token: {}", verifiedClaims);
+        List audList = (List)verifiedClaims.get("aud");
+        assertTrue(audList.size() == 1);
 
-        assertTrue(verifiedClaims.containsKey("sharedAccessDataPOJO"));
+        assertTrue(audList.get(0) instanceof String);
 
-        assertInstanceOf(ShareAccessData.class, verifiedClaims.get("sharedAccessDataPOJO"));
+        String aud = (String)audList.get(0);
 
-        ShareAccessData shareAccessData = (ShareAccessData)verifiedClaims.get("sharedAccessDataPOJO");
-
-        assertEquals("https://cdoc-ccs.ria.ee:443/key-shares/", shareAccessData.getServerBaseUrl());
-        assertEquals("9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3", shareAccessData.getShareId());
-        assertEquals("59b314d4815f21f73a0b9168cecbd5773cc694b6", shareAccessData.getNonce());
+        assertEquals("https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3"
+            + "?nonce=59b314d4815f21f73a0b9168cecbd5773cc694b6", aud);
     }
 
     @Test
-    void testVerifyWithSIDCert() throws VerificationException, ParseException, JOSEException {
+    void testVerifyWithSIDCert() throws Exception {
         // pre generated token, signed with demo Smart-ID 30303039914 (real cert and signature)
         // see AuthTokenCreatorTest::testCreateAuthToken in cdoc2-java-ref-imp
         // use https://sdjwt.org to decode
         final String token1 = """
-            eyJraWQiOiJQTk9FRS0zMDMwMzAzOTkxNCIsInR5cCI6InZuZC5jZG9jMi5DQ1MtYXV0aC10b2tlbi5
-            2MStzZC1qd3QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJldHNpL1BOT0VFLTMwMzAzMDM5OTE0IiwiX
-            3NkIjpbIml3ZXhLa0pZZWxTcUx2TC1WTTNKWE43b0h5MGM4T3YyVGhGZG9Xc2xUUlUiXSwiZXhwIjox
-            NzMwODk3NDMxLCJpYXQiOjE3MzA4OTczNzEsIl9zZF9hbGciOiJzaGEtMjU2In0.kFzbI8Dl0QyNQct
-            HI_g88dPw4HouAZdJxLrePkc3_gSWuiOSvpIGSjFgbWHPRu0pSduVBXClz98ySRDveykbdU6knhfHKq
-            61ST-9LS6iwBC9-mXNPL14Oc6BbcZA1ytehlHAj8UGXbpNgdqdSDBBRCCPKNH3e28SEVGL9lLUrLEfa
-            XolGPhXv3ce1irSArVFrJRwn1LS2Aoki2-TTpgGykY6SAUapJVYANYzQBU0RaSTmDwepoH36NFLPDuB
-            8Ovdi_qcHx8qg4nhFGfukdMZHlwxrR8iEeaOhEqdTRzBS8bQDl7M6wbIScUBEGlxFNf6HJD6_VaLlvn
-            uDIQRsTrPCs3hcmOr3FL0OhiIHNW0ppx4uTXWCGQL0QzzH76r7ueG2dt9SyQDrvAbQKu7fpEVaMlLdT
-            VAR7L6-GBgtnj4pz2jLxa7BE7Gx6x6dUZtK9SlnPCsHUEu4qRZEKhDgfaAYLeEaqL2ZmI8EecDP2VQV
-            snJlbkEoFhNFzpf9eqPti53pjp9XmGYDFbLiUfhumW6aJjg3z-ysLnlFTd_6FK5vjX6axXLL0oK27V5
-            g9MJqPmfvdzVdcpJZF43RvPlE0wGSxU7a8iDDmYuYIAT-9paSuaibAfIoFpMzrANPXSKedT5NkyehlZ
-            KZHZEeK9wp--fwgTyL0R-52-wx44sZgB-EbyLTtxB2TqGc_VnfgoCUNcIzKhgsJOdY-BX16dhs1QoCj
-            VBH2cG_X-JrblBWJU3DUda0dDGjw1j0yEY2yjc5nFKuSPuO4LO3RYQUQmfoTH0FzNgQpNdWIw9qmqeI
-            Euhv4TFNBfqiqyslTt27EEfg5e5AUCYe2JfLg0yk-A9PjzlU1c6F5pMn0C1ESFIjG3wLP0OiR602sur
-            qWOhLTsY6JTCabgTwVBm5jhLYi1bV82pqEHFKasT1iMRuaYRl33CfvZj9hScZqz_Byk4WLYGvQDwlPT
-            rjYsAfVMhNND95vhKBmRNFKobB-_T3X0ZmL6C_fs25u1GWIFQcL6KsyDa9Ify~WyIzc052dUhqYkRjW
-            npXN0E1X2Z5R2dRIiwic2hhcmVBY2Nlc3NEYXRhIixbeyIuLi4iOiItWnZob2tLQ19sUW93VEVtRHI4
-            cjlJTks2YV84UnhkYTlRTXZPS2ptNXNBIn0seyIuLi4iOiIydW1uSUxjOHFaeWtiUFh2MjlrOV9wUmV
-            5ek1NSGk1bGdkTE5lMl9hSjJ3In1dXQ~WyI0Nkw3Wk5oQi03eHNxSnloQ1N3TUd3Iix7InNlcnZlck5
-            vbmNlIjoiMDEiLCJzZXJ2ZXJCYXNlVVJMIjoiaHR0cHM6Ly9jZG9jMi1jc3MucmlhLmVlOjQ0MyIsIn
-            NoYXJlSWQiOiI5RUU5MEYyRC1EOTQ2LTRENTQtOUMzRC1GNEM2OEY3RkZBRTMifV0~
-            """.replaceAll("\\s", ""); //remove all whitespace
+        eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJSUzI1NiJ9
+        .
+        eyJpc3MiOiJldHNpL1BOT0VFLTMwMzAzMDM5OTE0IiwiX3NkIjpbIlZUZnV0bWtpdUJMWW5Sczl6dzBDZ2s5X0x3b09uSWhWd
+        GZNcXlMUHdSZjAiXSwiX3NkX2FsZyI6InNoYS0yNTYifQ
+        .
+        CA_tlS6sfG6DTx2RWF2_fNizVC8P2fHcitiUQNH5LNIEKfzwtT310rDn635VHSkFiPkYawpd-g6dJQUO6PN229KNA5qtoMi8T
+        a6dc-eCJ9dgHdnSdX-UBkUo4ZPct51dFpoFK_9L3vMpHneT_WRdaXXzMaTrEjD1dIPZ0YAZNY9R_jLYbRYYc-9_YbEtoRdAMCo
+        2kf9znoNfNcX1Tvt2wTJPR1FEqOT54DShTDywGbxX_w6mdFxirr0n9jkiZiDwQyvP7JN7s7x1CD6xsH-DyVh88mtPHLpRH42XC
+        qF_oBQ_BkAF_GoHYR43mk_C0zVg4PNsQ4eMKme3HW2HhyLUtDWOoF3OfiDdRX19ckPUAxh1C0N27g0nHroHYcyogu7cZ_qTaOE
+        3DmTRsymXErSfFXFYrr3CGetxERT6TzGzL-ycKcz-r7nwejhsgny2sgZDvQ0lvSPmiejldsqhkNGQcpnBF6JfX0V5fLLzLdU_c
+        mDBig1TLP-y8ic2xG6F-_Yojs8iL7b3DhEmeOXeqkrAT93pqW_HEbS6dyoY1Oi7xJuj6h3d-QJRgSBrUihf4EnD5XhvFFU8AXF
+        YhRsuyPOWBTtLiV9hvi7TKOUMPwY9EONpNQQiqFS_roMu4vaqLKve00bFDHGT09-dLt4suNA7cStVO-A2IDey9MfQ_bmuQT-6q
+        t02O-nZt4be6R0l0bf7HRlPl-RAThi8lP9qgOFP1ID0oRfK3ralrxGr8e4hjVrJhUSNJ9XAPJBVYdwJtPfee5DckR9HxJ53si3
+        FSPOdtnPsCL8pqCU1nMmdSttLllOEvg5oDtHjgoQGXgrCHU2w284TbZl0i86k910XfA-WcBz8Af9fK_QyoNC8UL01Nqc1ZmF1q
+        j702iRJ6gl__KDmzLh5aPjKec5SFrBXxJJzjUDCU8wLK5EHtKnOUSGb6Uo2TeTgAbtnCuNRwMcmyOMyDomNsJ2QaMPOYeHeCby
+        E3cRhkrIoymNZsSop9gnCz1V9wZR6SvMMLu4ahmfyHD86
+        ~
+        WyJNdVNxMjlKeFEyallWV2k2NTZuV0lBIiwiYXVkIixbeyIuLi4iOiJ4a0JmWFpacmx5N2RQWTB2YmtwbjRoSGZkQnhxQWYtcD
+        B1cDdxUkdIX1drIn0seyIuLi4iOiJiclFTUEhZYnZaOWZzdm1LQ1dZQ2hGVXdtMjhTclo2b3F3S3RYNk1yRXpBIn1dXQ
+        ~
+        WyJxSTJPTFlqRXU4bVlxamt5N1FodUhnIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNT
+        A2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlXHUwMDNkQUFFQ0F3UUZCZ2N
+        JQ1FvTERBNE5fdyJd
+        ~
+        """.replaceAll("\\s", ""); //remove all whitespace
 
         X509Certificate cert = X509CertUtils.parse(sidDemoCertStr);
+        X509Certificate issuerCert = X509CertUtils.parse(TEST_of_EID_SK_2016_PEM);
 
-        Map<String, Object> verifiedClaims = AuthTokenVerifier.getVerifiedClaims(token1, cert,
-            SIDCertificateUtil::getSemanticsIdentifier);
+        KeyStore test_Of_EID_SK_2016 = TestData.createEmptyTrustStore();
+        test_Of_EID_SK_2016.setCertificateEntry("test_Of_EID_SK_2016", issuerCert);
+
+
+        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(test_Of_EID_SK_2016, false);
+        Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(token1, cert);
 
         log.debug("claims: {}", verifiedClaims);
 
         assertNotNull(verifiedClaims.get("iss"));
-        assertTrue(verifiedClaims.get("iss").toString().contains("30303039914")); //etsi/PNOEE-30303039914
+        assertTrue(verifiedClaims.get("iss").toString().contains(SID_DEMO_IDENTIFIER)); //etsi/PNOEE-30303039914
+
+        var expectedAud = List.of("https://localhost:8443"
+            +"/key-shares/ff0102030405060708090a0b0c0e0dff?nonce=AAECAwQFBgcICQoLDA4N_w");
+
+        assertEquals(expectedAud, verifiedClaims.get("aud"));
     }
 }

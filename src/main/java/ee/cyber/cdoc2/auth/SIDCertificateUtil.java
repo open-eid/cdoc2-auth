@@ -1,5 +1,6 @@
 package ee.cyber.cdoc2.auth;
 
+import ee.cyber.cdoc2.auth.exception.IllegalCertificateException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
