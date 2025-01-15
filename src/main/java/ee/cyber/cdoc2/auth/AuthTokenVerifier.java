@@ -7,7 +7,12 @@ import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.crypto.impl.ECDSAProvider;
+import com.nimbusds.jose.crypto.impl.RSASSAProvider;
+import com.nimbusds.jose.jwk.Curve;
+import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -19,17 +24,20 @@ import org.slf4j.LoggerFactory;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
  * Class to validate cdoc2 auth tokens, created by {@link AuthTokenCreator}
  * Validated data has the following structure:
- * {@link AuthTokenVerifier#getVerifiedClaims(String,RSAKey)}:
+ * {@link AuthTokenVerifier#getVerifiedClaimsForRSA(String, RSAKey)} or
+ * {@link AuthTokenVerifier#getVerifiedClaimsForEC(String, ECKey)}:
  */
 public class AuthTokenVerifier {
 
@@ -52,11 +60,13 @@ public class AuthTokenVerifier {
      * @param cert certificate to verify token signature with
      * @return verified/disclosed claims as JsonObject
      * @throws VerificationException when token doesn't verify or missing/unsupported data
-     * @throws ParseException        If the string couldn't be parsed to a valid signed JWT.
-     * @throws JOSEException
+     * @throws ParseException If the string couldn't be parsed to a valid signed JWT.
+     * @throws JOSEException if signed JWT verification has failed
      */
-    public  Map<String, Object> getVerifiedClaims(String token, X509Certificate cert)
-        throws VerificationException, JOSEException, ParseException {
+    public Map<String, Object> getVerifiedClaims(
+        String token,
+        X509Certificate cert
+    ) throws VerificationException, JOSEException, ParseException {
 
         Objects.requireNonNull(token);
         Objects.requireNonNull(cert);
@@ -64,34 +74,98 @@ public class AuthTokenVerifier {
         //check that certificate is issued by a valid issuer
         this.certVerifier.checkCertificate(cert);
 
-        if (!"RSA".equals(cert.getPublicKey().getAlgorithm())) {
-            throw new VerificationException("Expected certificate public key to be RSA");
-        }
-
         try {
-            //For Smart-ID this is in format PNOEE-30303039914
-            String subjectSerial = extractKIDFunc.apply(cert);
-            RSAKey jwk = new RSAKey.Builder((RSAPublicKey) cert.getPublicKey())
-                .keyID(subjectSerial)
-                .build();
-
-            return getVerifiedClaims(token, jwk);
+            return getVerifiedClaimsByKeyAlgorithm(token, cert);
         } catch (IllegalCertificateException ex){
             throw new VerificationException("Failed to extract keyID from certificate", ex);
         }
     }
 
+    private Map<String, Object> getVerifiedClaimsByKeyAlgorithm(
+        String token,
+        X509Certificate cert
+    ) throws VerificationException, JOSEException, ParseException {
+        String publicKeyAlgorithm = cert.getPublicKey().getAlgorithm();
+        if ("RSA".equals(publicKeyAlgorithm)) {
+            return getVerifiedClaimsUsingRSACert(cert, token);
+        } else if ("EC".equals(publicKeyAlgorithm)) {
+            return getVerifiedClaimsUsingECDSACert(cert, token);
+        } else {
+            throw new VerificationException(
+                "Expected certificate public key to be RSA or EC algorithm"
+            );
+        }
+    }
+
+    private Map<String, Object> getVerifiedClaimsUsingRSACert(X509Certificate cert, String token)
+        throws VerificationException, ParseException, JOSEException {
+        //For Smart-ID this is in format PNOEE-30303039914
+        String subjectSerial = extractKIDFunc.apply(cert);
+        RSAKey jwk = new RSAKey.Builder((RSAPublicKey) cert.getPublicKey())
+            .keyID(subjectSerial)
+            .build();
+
+        return getVerifiedClaimsForRSA(token, jwk);
+    }
+
+    private Map<String, Object> getVerifiedClaimsUsingECDSACert(X509Certificate cert, String token)
+        throws VerificationException, ParseException, JOSEException {
+        //For Mobile-ID this is in format PNOEE-30303039914
+        String subjectSerial = extractKIDFunc.apply(cert);
+
+        ECKey jwk = new ECKey.Builder(Curve.P_256, (ECPublicKey) cert.getPublicKey())
+            .keyID(subjectSerial)
+            .build();
+
+        return getVerifiedClaimsForEC(token, jwk);
+    }
+
+    private static Map<String, Object> getVerifiedClaimsForRSA(String token, RSAKey pubRSAjwk)
+        throws VerificationException, JOSEException, ParseException {
+        JWSVerifier jwsVerifier = createRSAVerifier(pubRSAjwk);
+        return getVerifiedClaims(token, pubRSAjwk.getKeyID(), jwsVerifier, RSASSAProvider.SUPPORTED_ALGORITHMS);
+    }
+
+    private static Map<String, Object> getVerifiedClaimsForEC(String token, ECKey pubECJwk)
+        throws VerificationException, ParseException, JOSEException {
+        JWSVerifier jwsVerifier = createECVerifier(pubECJwk);
+        return getVerifiedClaims(token, pubECJwk.getKeyID(), jwsVerifier, ECDSAProvider.SUPPORTED_ALGORITHMS);
+    }
+
+    private static JWSVerifier createRSAVerifier(RSAKey pubRSAJwk)
+        throws JOSEException, VerificationException {
+        if (pubRSAJwk.getKeyID() == null) {
+            throw new VerificationException("Expected kid for pubRSAJwk");
+        }
+
+        return new RSASSAVerifier(pubRSAJwk);
+    }
+
+    private static JWSVerifier createECVerifier(ECKey pubECKey)
+        throws JOSEException, VerificationException {
+        if (pubECKey.getKeyID() == null) {
+            throw new VerificationException("Expected kid for pubECJwk");
+        }
+        return new ECDSAVerifier(pubECKey);
+    }
+
     /**
      * Verify token with pubRSAJWK and return verified claims from the token
      * @param token token to verify
-     * @param pubRSAJWK public RSA jwk to verify token with. Must have kid defined
+     * @param pubKeyId public jwk kid for token verification
+     * @param jwsVerifier JWS verifier
+     * @param allowedKeyAlgorithms JWS algorithms that are allowed
      * @return verified claims JsonObject as Map
      * @throws VerificationException if verification of token fails
-     * @throws JOSEException
-     * @throws ParseException
+     * @throws JOSEException if signed JWT verification has failed
+     * @throws ParseException If the string couldn't be parsed to a valid signed JWT
      */
-    protected static Map<String, Object> getVerifiedClaims(String token, RSAKey pubRSAJWK)
-        throws VerificationException, JOSEException, ParseException {
+    private static Map<String, Object> getVerifiedClaims(
+        String token,
+        String pubKeyId,
+        JWSVerifier jwsVerifier,
+        Set<JWSAlgorithm> allowedKeyAlgorithms
+    ) throws VerificationException, JOSEException, ParseException {
 
         SDJWT sdJwt = SDJWT.parse(token);
 
@@ -99,7 +173,7 @@ public class AuthTokenVerifier {
         SignedJWT signedJWT = SignedJWT.parse(jwt);
         JWSHeader header = signedJWT.getHeader();
 
-        if (!JWSAlgorithm.RS256.equals(header.getAlgorithm())) { //RSASSA-PKCS-v1_5 using SHA-256
+        if (!allowedKeyAlgorithms.contains(header.getAlgorithm())) {
             throw new VerificationException("Algorithm not supported: " + header.getAlgorithm());
         }
 
@@ -109,13 +183,7 @@ public class AuthTokenVerifier {
             throw new VerificationException("Unsupported \"typ\" " + header.getType());
         }
 
-        if (pubRSAJWK.getKeyID() == null) {
-            throw new VerificationException("Expected kid for pubRSAJWK");
-        }
-
-        JWSVerifier verifier = new RSASSAVerifier(pubRSAJWK);
-
-        boolean signatureValid = signedJWT.verify(verifier);
+        boolean signatureValid = signedJWT.verify(jwsVerifier);
         if (!signatureValid) {
             throw new VerificationException("JWT signature verification failed");
         }
@@ -135,9 +203,9 @@ public class AuthTokenVerifier {
         // check that "iss" matches certificate
         // iss is in format etsi/PNOEE-30303039914
         // x5c serialnumber PNOEE-30303039914
-        if (!issuer.getSemanticsIdentifier().equals(pubRSAJWK.getKeyID())) {
+        if (!issuer.getSemanticsIdentifier().equals(pubKeyId)) {
             throw new VerificationException("iss semantics identifier doesn't match to x5c serialnumber ("
-                + issuer.getSemanticsIdentifier() + "!=" + pubRSAJWK.getKeyID() + ")");
+                + issuer.getSemanticsIdentifier() + "!=" + pubKeyId + ")");
         }
 
         if (tokens_log.isDebugEnabled()) {

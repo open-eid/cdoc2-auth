@@ -1,8 +1,10 @@
 package ee.cyber.cdoc2.auth;
 
 import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.crypto.ECDSASigner;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.X509CertUtils;
@@ -23,11 +25,9 @@ import java.text.ParseException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 /**
  * Input test data utility class.
  */
-
 public final class TestData {
 
     //generated create-rsa-key-csr-crt-keystore.sh
@@ -88,8 +88,7 @@ public final class TestData {
     // generated create-rsa-key-csr-crt-keystore.sh
     // signing cert sk-ca.localhost.crt must be in server sid trust store
     // mock service certificate
-    public static final String TEST_CERT_PEM = "-----BEGIN CERTIFICATE-----"
-
+    public static final String TEST_RSA_CERT_PEM = "-----BEGIN CERTIFICATE-----"
         + """
         MIIDuTCCA2CgAwIBAgIUTL1AousETAVENwEl62mocPaUfZQwCgYIKoZIzj0EAwQw
         TDELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xETAPBgNVBAoMCHNrLWxv
@@ -114,10 +113,8 @@ public final class TestData {
         """.replaceAll("\\s", "")
         + "-----END CERTIFICATE-----"; //remove all whitespace
 
-
-
     // SK-CA.localhost.crt
-    public static final String TEST_CERT_ISSUER_PEM = """
+    public static final String TEST_RSA_CERT_ISSUER_PEM = """
         -----BEGIN CERTIFICATE-----
         MIIB7jCCAZOgAwIBAgIUc3AeVxEYSTyVlAXpkFxs/G3OKD4wCgYIKoZIzj0EAwQw
         TDELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xETAPBgNVBAoMCHNrLWxv
@@ -132,25 +129,68 @@ public final class TestData {
         6ReVJoevfe0/H0JM7AciG+1P
         -----END CERTIFICATE-----""";
 
-      //identifier from above TEST_CERT
+    // 30303039914 ECDSA certificate
+    private static final String TEST_ECDSA_CERT_PEM = """
+        -----BEGIN CERTIFICATE-----
+        MIICDzCCAbWgAwIBAgIUVn26RKn5tb6rOhO4sMrInr8UgxEwCgYIKoZIzj0EAwQw
+        TTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xDzANBgNVBAoMBi1sb2Nh
+        bDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MB4XDTI1MDExMzE2MDE1OFoX
+        DTI2MDExMzE2MDE1OFowYzEaMBgGA1UEBRMRUE5PRUUtMzAzMDMwMzk5MTQxCzAJ
+        BgNVBCoMAk9LMRMwEQYDVQQEDApURVNUTlVNQkVSMRYwFAYDVQQDDA1URVNUTlVN
+        QkVSLE9LMQswCQYDVQQGEwJFRTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABAWe
+        VJrrXvoxM0smdRMl6pfmRLeHFVl9cBu9V2tLyTPVbWGM9KTWMtTK+Z8cuJP/9Qwf
+        VYbyildK3Ljh0e3DoDyjXTBbMB8GA1UdIwQYMBaAFMOo1Ks+YOgIJxdsDy4nChTP
+        jAlvMAwGA1UdEwEB/wQCMAAwCwYDVR0PBAQDAgWgMB0GA1UdDgQWBBRLVYFQ5JNE
+        dGE3HjPOHWGWNebXmTAKBggqhkjOPQQDBANIADBFAiEA32rCmKZd5uho96r3zhWb
+        e6SuLRYHAsuUqj5IcMx8cJ0CIA8ntNP2P2oAQRf0wmypbvzyirYtu6Im1hf1vh/Y
+        BX2H
+        -----END CERTIFICATE-----""";
+
+    // 30303039914 ECDSA certificate private key
+    private static final String TEST_ECDSA_KEY = """
+        -----BEGIN EC PRIVATE KEY-----
+        MHcCAQEEIBcKDOTuvQgeXk/Ba+B63t1oz0bTJ8hzY7y1s9HSsavmoAoGCCqGSM49
+        AwEHoUQDQgAEBZ5Umute+jEzSyZ1EyXql+ZEt4cVWX1wG71Xa0vJM9VtYYz0pNYy
+        1Mr5nxy4k//1DB9VhvKKV0rcuOHR7cOgPA==
+        -----END EC PRIVATE KEY-----""";
+
+    // ECDSA cyber-ca.localhost.crt
+    public static final String TEST_ECDSA_CERT_ISSUER_PEM = """
+        -----BEGIN CERTIFICATE-----
+        MIIB8DCCAZWgAwIBAgIUH+YPt2fcRJtQnv0S0qaepo11SnUwCgYIKoZIzj0EAwQw
+        TTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xDzANBgNVBAoMBi1sb2Nh
+        bDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MB4XDTI1MDExMzE1NTc0MloX
+        DTI2MDExMzE1NTc0MlowTTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4x
+        DzANBgNVBAoMBi1sb2NhbDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MFkw
+        EwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERSZfTmk6OZhO55tULRJMn4ALjblWXoxI
+        tbo+mj0isO8lO8kbdwAu8b3ndJ6OJrdFxs9znhEbwtwOk7TB8fxNc6NTMFEwHQYD
+        VR0OBBYEFMOo1Ks+YOgIJxdsDy4nChTPjAlvMB8GA1UdIwQYMBaAFMOo1Ks+YOgI
+        JxdsDy4nChTPjAlvMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwQDSQAwRgIh
+        AMNstkihBiWmsQnfDnxuu9yPSG0XQLxjlf6seUh7Wh5RAiEA/y9FA8R1kuelLxWs
+        Yro9lhiEr72sQG//4CDRjTxuT7E=
+        -----END CERTIFICATE-----""";
+
+    //identifier from above TEST_RSA_CERT and TEST_ECDSA_CERT
     public static final String TEST_IDENTIFIER = "30303039914";
-    public static final EtsiIdentifier TEST_ETSI_RECIPIENT = new EtsiIdentifier("etsi/PNOEE-" + TEST_IDENTIFIER);
+    public static final EtsiIdentifier TEST_ETSI_RECIPIENT
+        = new EtsiIdentifier("etsi/PNOEE-" + TEST_IDENTIFIER);
+
+    public static final JWSAlgorithm.Family SID_PUBLIC_KEY_ALGORITHM = JWSAlgorithm.Family.RSA;
+    public static final JWSAlgorithm.Family MID_PUBLIC_KEY_ALGORITHM = JWSAlgorithm.Family.EC;
 
     private static final Logger log = LoggerFactory.getLogger(TestData.class);
-
-
 
     private TestData() {
         // utility class
     }
 
-    public static KeyStore createTestIssuerTrustStore()
+    public static KeyStore createTestIssuerTrustStore(String certIssuerPem)
         throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
 
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
         trustStore.load(null, null);
 
-        InputStream is = new ByteArrayInputStream(TEST_CERT_ISSUER_PEM.getBytes(StandardCharsets.UTF_8));
+        InputStream is = new ByteArrayInputStream(certIssuerPem.getBytes(StandardCharsets.UTF_8));
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
 
@@ -165,42 +205,79 @@ public final class TestData {
             return trustStore;
     }
 
+    public static X509Certificate loadTestCert(JWSAlgorithm.Family pubKeyAlgorithm) throws CertificateException {
+        String certPem;
+        if (pubKeyAlgorithm.equals(SID_PUBLIC_KEY_ALGORITHM)) {
+            certPem = TEST_RSA_CERT_PEM;
+        } else if (pubKeyAlgorithm.equals(MID_PUBLIC_KEY_ALGORITHM)) {
+            certPem = TEST_ECDSA_CERT_PEM;
+        } else {
+            throw new CertificateException("Not supported public key algorithm " + pubKeyAlgorithm);
+        }
 
-
-    public static X509Certificate loadTestCert() throws CertificateException {
-        return X509CertUtils.parse(TEST_CERT_PEM);
-//        InputStream is = new ByteArrayInputStream(TEST_CERT_PEM.getBytes(StandardCharsets.UTF_8));
+        return X509CertUtils.parse(certPem);
+//        InputStream is = new ByteArrayInputStream(certPem.getBytes(StandardCharsets.UTF_8));
 //        CertificateFactory cf = CertificateFactory.getInstance("X.509");
 //        return (X509Certificate) cf.generateCertificate(is);
     }
 
+    public static String generateTestAuthTicketWithRsaKey(
+        String semanticsIdentifier,
+        String serverUrl,
+        String shareId,
+        String nonce
+    ) throws CertificateException, JOSEException, ParseException {
+        return generateTestAuthTicket(
+            semanticsIdentifier,
+            serverUrl,
+            shareId,
+            nonce,
+            SID_PUBLIC_KEY_ALGORITHM,
+            TEST_RSA_CERT_PEM
+            );
+    }
 
-
-
-
+    public static String generateTestAuthTicketWithEcdsaKey(
+        String semanticsIdentifier,
+        String serverUrl,
+        String shareId,
+        String nonce
+    ) throws CertificateException, JOSEException, ParseException {
+        return generateTestAuthTicket(
+            semanticsIdentifier,
+            serverUrl,
+            shareId,
+            nonce,
+            MID_PUBLIC_KEY_ALGORITHM,
+            TEST_ECDSA_CERT_PEM
+        );
+    }
 
     /**
      * Generate Auth ticket with TestData.TEST_RSAKEY.
      * @param semanticsIdentifier example PNOEE-30303039914
-     * @param serverUrl
-     * @param shareId
-     * @param nonce
-     * @return
+     * @param serverUrl server URL
+     * @param shareId share ID
+     * @param nonce nonce
+     * @param pubKeyAlgorithm public key algorithm
+     * @param certificate certificate
+     * @return authentication ticket
      */
-    public static String generateTestAuthTicket(String semanticsIdentifier, String serverUrl, String shareId, String nonce)
-        throws CertificateException, JOSEException, ParseException {
+    private static String generateTestAuthTicket(
+        String semanticsIdentifier,
+        String serverUrl,
+        String shareId,
+        String nonce,
+        JWSAlgorithm.Family pubKeyAlgorithm,
+        String certificate
+    ) throws CertificateException, JOSEException, ParseException {
 
-        X509Certificate cert = X509CertUtils.parseWithException(TEST_CERT_PEM);
+        X509Certificate cert = X509CertUtils.parseWithException(certificate);
         String testSemanticsIdentifier = SIDCertificateUtil.getSemanticsIdentifier(cert); //PNOEE-30303039914
         EtsiIdentifier etsi = new EtsiIdentifier("etsi/" + testSemanticsIdentifier);
 
         assertTrue(etsi.getSemanticsIdentifier().equals(semanticsIdentifier),
             "Only " + testSemanticsIdentifier + " is supported for auth ticket generation");
-
-        JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_RSAKEY);
-        RSAKey privateKey = jwk.toRSAKey();
-
-        JWSSigner jwsSigner = new RSASSASigner(privateKey);
 
         AuthTokenCreator token = AuthTokenCreator.builder()
             .withEtsiIdentifier(etsi) // "iss" field etsi/PNOEE-30303039914
@@ -214,10 +291,30 @@ public final class TestData {
                 "9d23660840b427f405009d970d269770417bc769"))
             .build();
 
-        
-        token.sign(jwsSigner);
+
+        signAuthToken(token, pubKeyAlgorithm);
 
         return token.createTicketForShareId(shareId);
+    }
+
+    private static void signAuthToken(AuthTokenCreator token,  JWSAlgorithm.Family pubKeyAlgorithm)
+        throws JOSEException, CertificateException, ParseException {
+
+        if (pubKeyAlgorithm.equals(SID_PUBLIC_KEY_ALGORITHM)) {
+            JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_RSAKEY);
+            RSAKey privateKey = jwk.toRSAKey();
+            RSASSASigner jwsSigner = new RSASSASigner(privateKey);
+            token.sign(jwsSigner);
+            return;
+        } else if (pubKeyAlgorithm.equals(MID_PUBLIC_KEY_ALGORITHM)) {
+            JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_ECDSA_KEY);
+            ECKey privateKey = jwk.toECKey();
+            ECDSASigner jwsSigner = new ECDSASigner(privateKey);
+            token.sign(jwsSigner);
+            return;
+        }
+
+        throw new CertificateException("Not supported public key algorithm " + pubKeyAlgorithm);
     }
 
 }

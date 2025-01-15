@@ -106,7 +106,7 @@ public class AuthTokenCreator {
      * </code>
      *
      * @return JWTClaimsSet, where "aud" list has been replaced with digests of Disclosures
-     * @throws ParseException
+     * @throws ParseException if JWT claims parse has failed
      */
     private JWTClaimsSet createPayload() throws ParseException {
         // Create an SDObjectBuilder instance to prepare the payload part of
@@ -136,19 +136,29 @@ public class AuthTokenCreator {
         return JWTClaimsSet.parse(claims);
     }
 
+    public void sign(JWSSigner signer)
+        throws ParseException, JOSEException {
+
+        JWSAlgorithm jwsAlgorithm = signer.supportedJWSAlgorithms().iterator().next();
+        sign(signer, jwsAlgorithm);
+    }
+
     /**
-     * Create payload part of JWT and sign it with JWSSigner and JWK private key. (Currently only RSAsigner and matching RSA public jwk is supported)
-     * @param signer jwsSigner, currently only RSASigner is supported
-     * @throws JOSEException
-     * @throws ParseException
+     * Create payload part of JWT and sign it with JWSSigner and JWK private key.
+     * Currently, RSASigner and ECDSASigner are supported.
+     * @param signer jwsSigner
+     * @param jwsAlgorithm jws algorithm
+     * @throws JOSEException if JWT signing has failed
+     * @throws ParseException if JWT claims parse has failed
      */
-    //Currently only RSASigner and RSA public jwk are supported
-    public void sign(JWSSigner signer) throws JOSEException, ParseException {
+    private void sign(JWSSigner signer, JWSAlgorithm jwsAlgorithm)
+        throws JOSEException, ParseException {
         //for SID certificate is available after successful authentication (that is actually signing with different key - PIN1)
-        //for now use jwk (RSA)
+        //for SID use jwk (RSA), for MID jwk (ECDSA)
 
         JWSHeader header =
-            new JWSHeader.Builder(JWSAlgorithm.RS256) //RSASSA-PKCS1.5, according SID RP API doc, only PKCS1.5 signature padding is supported
+            new JWSHeader.Builder(jwsAlgorithm)
+                // signature padding is supported
                 .type(new JOSEObjectType(Constants.TYPE))
                 .build();
 
