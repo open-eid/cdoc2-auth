@@ -1,6 +1,7 @@
 package ee.cyber.cdoc2.auth;
 
 import com.nimbusds.jose.util.X509CertUtils;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +11,10 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
+import static ee.cyber.cdoc2.auth.TestData.MID_PUBLIC_KEY_ALGORITHM;
+import static ee.cyber.cdoc2.auth.TestData.SID_PUBLIC_KEY_ALGORITHM;
+import static ee.cyber.cdoc2.auth.TestData.TEST_ECDSA_CERT_ISSUER_PEM;
+import static ee.cyber.cdoc2.auth.TestData.TEST_RSA_CERT_ISSUER_PEM;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthTest {
@@ -98,35 +103,51 @@ class AuthTest {
         -----END CERTIFICATE-----""";
 
     @Test
-    void testGenerateVerifyTicket() throws Exception {
+    void testGenerateVerifyTicketWithRsaKey() throws Exception {
         EtsiIdentifier recipient = new EtsiIdentifier("etsi/PNOEE-" + TestData.TEST_IDENTIFIER);
 
-        String sdjwt0  = TestData.generateTestAuthTicket(recipient.getSemanticsIdentifier(),
+        String sdjwt0  = TestData.generateTestAuthTicketWithRsaKey(
+            recipient.getSemanticsIdentifier(),
             "https://css.ria.ee:443",
             "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
-            "59b314d4815f21f73a0b9168cecbd5773cc694b6");
+            "59b314d4815f21f73a0b9168cecbd5773cc694b6"
+        );
 
         log.debug("SDJWT 0: {}", sdjwt0);
 
-        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(TestData.createTestIssuerTrustStore(), false);
-        Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(sdjwt0, TestData.loadTestCert());
+        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
+            TestData.createTestIssuerTrustStore(TEST_RSA_CERT_ISSUER_PEM), false
+        );
+        Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
+            sdjwt0, TestData.loadTestCert(SID_PUBLIC_KEY_ALGORITHM)
+        );
         log.debug("verified claims from ticket: {}", verifiedClaims);
 
-        assertEquals(TestData.TEST_ETSI_RECIPIENT.toString(), verifiedClaims.get("iss"));
+        assertVerifiedClaims(verifiedClaims, TestData.TEST_ETSI_RECIPIENT);
+    }
 
-        assertTrue(verifiedClaims.containsKey("aud"));
+    @Test
+    void testGenerateVerifyTicketWithEcdsaKey() throws Exception {
+        EtsiIdentifier recipient = new EtsiIdentifier("etsi/PNOEE-" + TestData.TEST_IDENTIFIER);
 
-        assertTrue(verifiedClaims.get("aud") instanceof List);
+        String sdjwt0  = TestData.generateTestAuthTicketWithEcdsaKey(
+            recipient.getSemanticsIdentifier(),
+            "https://css.ria.ee:443",
+            "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
+            "59b314d4815f21f73a0b9168cecbd5773cc694b6"
+        );
 
-        List audList = (List)verifiedClaims.get("aud");
-        assertTrue(audList.size() == 1);
+        log.debug("SDJWT 0: {}", sdjwt0);
 
-        assertTrue(audList.get(0) instanceof String);
+        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
+            TestData.createTestIssuerTrustStore(TEST_ECDSA_CERT_ISSUER_PEM), false
+        );
+        Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
+            sdjwt0, TestData.loadTestCert(MID_PUBLIC_KEY_ALGORITHM)
+        );
+        log.debug("verified claims from ticket: {}", verifiedClaims);
 
-        String aud = (String)audList.get(0);
-
-        assertEquals("https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3"
-            + "?nonce=59b314d4815f21f73a0b9168cecbd5773cc694b6", aud);
+        assertVerifiedClaims(verifiedClaims, TestData.TEST_ETSI_RECIPIENT);
     }
 
     @Test
@@ -180,5 +201,23 @@ class AuthTest {
             +"/key-shares/ff0102030405060708090a0b0c0e0dff?nonce=AAECAwQFBgcICQoLDA4N_w");
 
         assertEquals(expectedAud, verifiedClaims.get("aud"));
+    }
+
+    private void assertVerifiedClaims(Map<String, Object> verifiedClaims, EtsiIdentifier recipient) {
+        assertEquals(recipient.toString(), verifiedClaims.get("iss"));
+
+        assertTrue(verifiedClaims.containsKey("aud"));
+
+        assertTrue(verifiedClaims.get("aud") instanceof List);
+
+        List audList = (List)verifiedClaims.get("aud");
+        assertTrue(audList.size() == 1);
+
+        assertTrue(audList.get(0) instanceof String);
+
+        String aud = (String)audList.get(0);
+
+        assertEquals("https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3"
+            + "?nonce=59b314d4815f21f73a0b9168cecbd5773cc694b6", aud);
     }
 }
