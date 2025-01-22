@@ -133,6 +133,4 @@ public class ShareAccessData {
             + path.substring(0, path.indexOf(KEY_SHARES_EP));
         return new URL(serverBaseUrl);
     }
-
-
 }

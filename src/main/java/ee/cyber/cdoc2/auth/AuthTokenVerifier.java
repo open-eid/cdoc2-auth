@@ -241,5 +241,4 @@ public class AuthTokenVerifier {
         // aud=[https://cdoc-ccs.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3?nonce=59..b6]
         // }
     }
-
 }
