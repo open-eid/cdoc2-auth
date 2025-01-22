@@ -32,5 +32,4 @@ class ShareAccessDataTest {
         assertEquals("649a44d6cd9827cae3f3df04fd5eda98246d2dde", data.getNonce());
         assertEquals(url, data.toURL());
     }
-
 }

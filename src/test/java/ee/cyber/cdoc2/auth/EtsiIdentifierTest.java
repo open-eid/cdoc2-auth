@@ -54,6 +54,4 @@ class EtsiIdentifierTest {
             new EtsiIdentifier("PNOE0-30303039914");
         });
     }
-
-
 }

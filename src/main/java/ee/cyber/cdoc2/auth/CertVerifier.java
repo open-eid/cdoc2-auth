@@ -48,7 +48,7 @@ public class CertVerifier {
      * @param cert certificate to validate
      * @throws VerificationException
      */
-    public  void checkCertificate(X509Certificate cert) throws VerificationException {
+    public void checkCertificate(X509Certificate cert) throws VerificationException {
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -77,5 +77,4 @@ public class CertVerifier {
             throw new VerificationException("Certificate validation error", e);
         }
     }
-
 }

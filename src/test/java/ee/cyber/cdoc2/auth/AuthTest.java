@@ -116,10 +116,10 @@ class AuthTest {
         log.debug("SDJWT 0: {}", sdjwt0);
 
         AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
-            TestData.createTestIssuerTrustStore(TEST_RSA_CERT_ISSUER_PEM), false
+            TestData.createTestIssuerTrustStore(List.of(TEST_RSA_CERT_ISSUER_PEM)), false
         );
         Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
-            sdjwt0, TestData.loadTestCert(SID_PUBLIC_KEY_ALGORITHM)
+            sdjwt0, TestData.loadDefaultTestCert(SID_PUBLIC_KEY_ALGORITHM)
         );
         log.debug("verified claims from ticket: {}", verifiedClaims);
 
@@ -140,10 +140,10 @@ class AuthTest {
         log.debug("SDJWT 0: {}", sdjwt0);
 
         AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
-            TestData.createTestIssuerTrustStore(TEST_ECDSA_CERT_ISSUER_PEM), false
+            TestData.createTestIssuerTrustStore(List.of(TEST_ECDSA_CERT_ISSUER_PEM)), false
         );
         Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
-            sdjwt0, TestData.loadTestCert(MID_PUBLIC_KEY_ALGORITHM)
+            sdjwt0, TestData.loadDefaultTestCert(MID_PUBLIC_KEY_ALGORITHM)
         );
         log.debug("verified claims from ticket: {}", verifiedClaims);
 
