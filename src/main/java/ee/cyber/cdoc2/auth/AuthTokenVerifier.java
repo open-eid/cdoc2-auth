@@ -11,7 +11,6 @@ import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.crypto.impl.ECDSAProvider;
 import com.nimbusds.jose.crypto.impl.RSASSAProvider;
-import com.nimbusds.jose.jwk.Curve;
 import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
 import java.util.List;
@@ -110,10 +108,12 @@ public class AuthTokenVerifier {
 
     private Map<String, Object> getVerifiedClaimsUsingECDSACert(X509Certificate cert, String token)
         throws VerificationException, ParseException, JOSEException {
+
         //For Mobile-ID this is in format PNOEE-30303039914
         String subjectSerial = extractKIDFunc.apply(cert);
 
-        ECKey jwk = new ECKey.Builder(Curve.P_256, (ECPublicKey) cert.getPublicKey())
+        // parse ECKey from cert (determining EC curve is a bit tricky) and then set keyID
+        ECKey jwk = new ECKey.Builder(ECKey.parse(cert))
             .keyID(subjectSerial)
             .build();
 
@@ -195,6 +195,10 @@ public class AuthTokenVerifier {
         String iss = signedClaims.getIssuer();
         EtsiIdentifier issuer;
         try {
+            if (!iss.startsWith(EtsiIdentifier.PREFIX)) {
+                throw new VerificationException("Only identifiers starting with " + EtsiIdentifier.PREFIX
+                    + " are supported.  \"iss\" \"" + iss + "\"");
+            }
             issuer = new EtsiIdentifier(iss); // etsi/PNOEE-30303039914
         } catch (InvalidEtsiSemanticsIdenfierException e) {
             throw new VerificationException("Invalid \"iss\" \"" + iss + "\"", e);

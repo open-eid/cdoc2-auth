@@ -136,9 +136,22 @@ public class AuthTokenCreator {
         return JWTClaimsSet.parse(claims);
     }
 
+    /**
+     * Create payload part of JWT and sign it with JWSSigner and JWK private key.
+     * Currently, RSASigner and ECDSASigner are supported.
+     * @param signer jwsSigner jwsSigner.supportedJWSAlgorithms() must return exactly 1 algorithm
+     * @throws JOSEException if JWT signing has failed
+     * @throws ParseException if JWT claims parse has failed
+     */
     public void sign(JWSSigner signer)
         throws ParseException, JOSEException {
 
+        Objects.requireNonNull(signer);
+
+        if (signer.supportedJWSAlgorithms().size() != 1) {
+            throw new JOSEException("Expecting signer with exactly 1 supported JWS algorithm: "
+                + signer.supportedJWSAlgorithms());
+        }
         JWSAlgorithm jwsAlgorithm = signer.supportedJWSAlgorithms().iterator().next();
         sign(signer, jwsAlgorithm);
     }
@@ -147,11 +160,11 @@ public class AuthTokenCreator {
      * Create payload part of JWT and sign it with JWSSigner and JWK private key.
      * Currently, RSASigner and ECDSASigner are supported.
      * @param signer jwsSigner
-     * @param jwsAlgorithm jws algorithm
+     * @param jwsAlgorithm jws algorithm that will be used for signing. Must be supported by signer
      * @throws JOSEException if JWT signing has failed
      * @throws ParseException if JWT claims parse has failed
      */
-    private void sign(JWSSigner signer, JWSAlgorithm jwsAlgorithm)
+    public void sign(JWSSigner signer, JWSAlgorithm jwsAlgorithm)
         throws JOSEException, ParseException {
         //for SID certificate is available after successful authentication (that is actually signing with different key - PIN1)
         //for SID use jwk (RSA), for MID jwk (ECDSA)
@@ -166,7 +179,7 @@ public class AuthTokenCreator {
         SignedJWT jwt = new SignedJWT(header, createPayload());
 
         // Let the signer sign the credential JWT.
-        jwt.sign(signer); //signer requires header, but header seems to be only required for JWSAlgorithm
+        jwt.sign(signer);
 
         this.signedJWT = jwt;
     }

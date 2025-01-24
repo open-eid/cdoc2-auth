@@ -22,6 +22,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.Set;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -428,7 +429,13 @@ public final class TestData {
         if (pubKeyAlgorithm.equals(SID_PUBLIC_KEY_ALGORITHM)) {
             JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_RSAKEY);
             RSAKey privateKey = jwk.toRSAKey();
-            RSASSASigner jwsSigner = new RSASSASigner(privateKey);
+            RSASSASigner jwsSigner = new RSASSASigner(privateKey) {
+                // Smart-ID JWSSigner supports only RS256
+                @Override
+                public Set<JWSAlgorithm> supportedJWSAlgorithms() {
+                    return Set.of(JWSAlgorithm.RS256);
+                }
+            };
             token.sign(jwsSigner);
             return;
         } else if (pubKeyAlgorithm.equals(MID_PUBLIC_KEY_ALGORITHM)) {
