@@ -2,6 +2,7 @@
 
 * Implements `x-cdoc2-auth-ticket` header parameter for 
   [GET /key-shares/\${shareId}](https://github.com/open-eid/cdoc2-openapi/cdoc2-key-shares-openapi.yaml)
+* Supports ES256 and RS256 algorithms to support signing with Mobile-ID and Smart-ID (other algorithms not tested)
 
 Used by:
 
@@ -60,7 +61,7 @@ JWT payload:
 }
 ```
 
-Nonce value was acquired from [\${serverBaseUrl}/key-shares/\${shareId}/nonce](https://github.com/open-eid/cdoc2-openapi/blob/facc1371e3dc39a426541f8a153083c8a6d4539c/cdoc2-key-shares-openapi.yaml#L87) endpoint.
+Nonce value was acquired using [\${serverBaseUrl}/key-shares/\${shareId}/nonce](https://github.com/open-eid/cdoc2-openapi/blob/facc1371e3dc39a426541f8a153083c8a6d4539c/cdoc2-key-shares-openapi.yaml#L87) endpoint.
 
 Before signing, "aud" will be replaced with a digest value as specified in 
 [sd-jwt specification](https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/):

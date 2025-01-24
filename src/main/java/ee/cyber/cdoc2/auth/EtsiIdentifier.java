@@ -10,16 +10,18 @@ import java.util.Objects;
  */
 public class EtsiIdentifier {
 
-    private static final int MIN_LEN = "etsi/PNOEE-0".length();
-    private static final int HYPHEN_POS = "etsi/PNOEE-0".indexOf("-");
+    public static final String PREFIX = "etsi/";
 
-    private static final int IDENTITY_TYPE_START = "etsi/".length();
+    private static final int MIN_LEN = (PREFIX + "PNOEE-0").length();
+    private static final int HYPHEN_POS = (PREFIX + "PNOEE-0").indexOf("-");
+
+    private static final int IDENTITY_TYPE_START = PREFIX.length();
     private static final int IDENTITY_TYPE_END = IDENTITY_TYPE_START + "PNO".length();
 
-    private static final int COUNTRY_CODE_START = "etsi/PNO".length();
+    private static final int COUNTRY_CODE_START = (PREFIX + "PNO").length();
     private static final int COUNTRY_CODE_END = COUNTRY_CODE_START + "EE".length();
 
-    private static final int IDENTIFIER_START = "etsi/PNOEE-".length();
+    private static final int IDENTIFIER_START = (PREFIX +"PNOEE-").length();
 
     private final String etsiSemanticsIdentifier;
 
@@ -37,19 +39,40 @@ public class EtsiIdentifier {
      */
     public EtsiIdentifier(String etsi) throws InvalidEtsiSemanticsIdenfierException {
         validateEtsiSemanticsIdentifier(etsi);
-        this.etsiSemanticsIdentifier = etsi;
+        this.etsiSemanticsIdentifier = etsi; // Full identifier with prefix "etsi/PNOEE-48010010101"
 
-        this.identityType = parseIdentityType(etsi);
-        this.countryCode = parseCountryCode(etsi);
-        this.identifier = parseIdentifier(etsi);
+        this.identityType = parseIdentityType(etsi); // "PNO"
+        this.countryCode = parseCountryCode(etsi); // "EE"
+        this.identifier = parseIdentifier(etsi);    // "48010010101"
     }
 
+    /**
+     * Get prefix that specifies identifier type.
+     * @return "etsi/"
+     */
+    public String getPrefix() {
+        return PREFIX;
+    }
+
+    /**
+     * For "etsi/PNOEE-48010010101" returns "48010010101"
+     * @return identifier part of semantics identifier (part after '-')
+     */
     public String getIdentifier() { return this.identifier; }
 
+    /**
+     * For "etsi/PNOEE-48010010101" returns "EE"
+     */
     public String getCountryCode() { return this.countryCode; }
 
+    /**
+     * For "etsi/PNOEE-48010010101" returns "PNO"
+     */
     public IdentityType getIdentityType() { return this.identityType; }
 
+    /**
+     * @return identifier without prefix "etsi/", example "PNOEE-48010010101"
+     */
     public String getSemanticsIdentifier() {
         return this.etsiSemanticsIdentifier.substring(IDENTITY_TYPE_START);
     }
@@ -57,8 +80,8 @@ public class EtsiIdentifier {
     private void validateEtsiSemanticsIdentifier(String etsi) throws InvalidEtsiSemanticsIdenfierException {
         Objects.requireNonNull(etsi);
 
-        if (!etsi.startsWith("etsi/")) {
-            throw new InvalidEtsiSemanticsIdenfierException(etsi + "doesn't start with etsi/");
+        if (!etsi.startsWith(PREFIX)) {
+            throw new InvalidEtsiSemanticsIdenfierException(etsi + "doesn't start with " + PREFIX);
         }
 
         if (etsi.length() < MIN_LEN) {

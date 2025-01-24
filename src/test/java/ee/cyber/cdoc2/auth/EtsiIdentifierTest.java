@@ -37,21 +37,21 @@ class EtsiIdentifierTest {
     @Test
     void shoudFailWithWrongHyphenPos() {
         Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
-            new EtsiIdentifier("PNOEUR-30303039914");
+            new EtsiIdentifier("etsi/PNOEUR-30303039914");
         });
     }
 
     @Test
     void shoudFailForTooShort() {
         Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
-            new EtsiIdentifier("PNOEE-");
+            new EtsiIdentifier("etsi/PNOEE-");
         });
     }
 
     @Test
     void shoudFailForInvalidCountryCode() {
         Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
-            new EtsiIdentifier("PNOE0-30303039914");
+            new EtsiIdentifier("etsi/PNOE0-30303039914");
         });
     }
 }

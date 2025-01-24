@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1-SNAPSHOT] Improvements to 0.3.0-SNAPSHOT
+
+### Changes
+* add `EtsiIdentifier.PREFIX` const
+* make `AuthTokenCreator.sign(JWSSigner, JWSAlgorithm)` public to support JWSSigner with multiple algorithms.
+
+### Bug Fixes
+* Fix EtsiIdentifierTests
+* When verifying auth-token with EC certificate, determine EC curve from certificate instead of using hard-coded `P256`
+* Previously first RSA JWSAlgorithm was selected from JWSSigner supported algorithms (that happened to be `RS256`).
+  RSA JWT algorithm must now be explicitly specified or JWSSigner must support single algorithm (like SIDAuthJWSSigner does)
+
+
 ## [0.3.0-SNAPSHOT] Support for signing with EC keys
 
 ### Features

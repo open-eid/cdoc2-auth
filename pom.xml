@@ -7,7 +7,7 @@
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
     <!-- pre-release, version doesn't follow semantic versioning yet -->
-    <version>0.3.0-SNAPSHOT</version>
+    <version>0.3.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates
