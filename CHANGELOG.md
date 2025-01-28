@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.2-SNAPSHOT] Bugfixes 0.3.1-SNAPSHOT
+
+### Bug Fixes
+* Fix "java.lang.ClassNotFoundException: org.bouncycastle.cert.jcajce.JcaX509CertificateHolder" 
+  when validating "ES256" JWT tokens. Nimbus library depends (optional) on 
+  `org.bouncycastle:bcpkix-jdk18on:1.80` when parsing certificates with EC keys.
+
 ## [0.3.1-SNAPSHOT] Improvements to 0.3.0-SNAPSHOT
 
 ### Changes

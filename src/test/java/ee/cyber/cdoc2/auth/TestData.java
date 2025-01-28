@@ -442,7 +442,7 @@ public final class TestData {
             JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_ECDSA_KEY);
             ECKey privateKey = jwk.toECKey();
             ECDSASigner jwsSigner = new ECDSASigner(privateKey);
-            token.sign(jwsSigner);
+            token.sign(jwsSigner, JWSAlgorithm.ES256);
             return;
         }
 
