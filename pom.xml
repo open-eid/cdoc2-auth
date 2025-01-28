@@ -7,7 +7,7 @@
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
     <!-- pre-release, version doesn't follow semantic versioning yet -->
-    <version>0.3.1-SNAPSHOT</version>
+    <version>0.3.2-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates
@@ -91,15 +91,11 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- nimbus-jose-jwt JWK.parseFromPEMEncodedObjects() fails run-time with ClassNotFound for
-             org/bouncycastle/openssl/jcajce/JcaPEMKeyConverter . Fix it -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.79</version>
-            <scope>test</scope>
+            <version>1.80</version>
         </dependency>
-
 
         <dependency>
             <groupId>ch.qos.logback</groupId>
