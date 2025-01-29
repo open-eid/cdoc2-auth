@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.3.3-SNAPSHOT] Improvements to 0.3.2-SNAPSHOT
+
+### Changes
+* Add slf4j-api and change logback-classic scope to test.
+
 ## [0.3.2-SNAPSHOT] Bugfixes 0.3.1-SNAPSHOT
 
 ### Bug Fixes

@@ -7,7 +7,7 @@
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
     <!-- pre-release, version doesn't follow semantic versioning yet -->
-    <version>0.3.2-SNAPSHOT</version>
+    <version>0.3.3-SNAPSHOT</version>
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates
@@ -98,9 +98,17 @@
         </dependency>
 
         <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.16</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
