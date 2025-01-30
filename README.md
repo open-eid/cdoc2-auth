@@ -2,7 +2,8 @@
 
 * Implements `x-cdoc2-auth-ticket` header parameter for 
   [GET /key-shares/\${shareId}](https://github.com/open-eid/cdoc2-openapi/cdoc2-key-shares-openapi.yaml)
-* Supports ES256 and RS256 algorithms to support signing with Mobile-ID and Smart-ID (other algorithms not tested)
+* Supports ES256 and RS256 algorithms required to support [Mobile-ID](https://github.com/SK-EID/MID) 
+  and [Smart-ID](https://github.com/SK-EID/smart-id-documentation) (other algorithms not tested)
 
 Used by:
 
@@ -22,7 +23,7 @@ mvn clean install
 
 ## cdoc2.auth-token.v1 examples
 
-* Official documentation: (TODO) https://open-eid.github.io/CDOC2/2.0/03_system_architecture
+* Official documentation: [SD-JWT based CDOC2 authentication protocol](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch05_ID_authentication_protocol/) (TODO: update to final 2.0, when available)
 * `/key-shares` OAS specification can be found here: https://github.com/open-eid/cdoc2-openapi
 
 In short, cdoc2 key-shares auth ticket is used to authenticate against multiple key-share servers by signing
@@ -122,6 +123,6 @@ After disclosing Disclosures from sd-jwt, JWT body will be:
 
 Other rules to validate auth ticket:
 
-TODO: https://open-eid.github.io/CDOC2/2.0/03_system_architecture
+[Verifying SD-JWT (verifying authentication ticket)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch05_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-ticket)
 
 For additional details see tests in `src/test/java/`
