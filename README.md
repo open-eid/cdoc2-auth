@@ -20,6 +20,57 @@ CDOC2 has been tested with JDK 17 and Maven 3.8.8
 mvn clean install
 ```
 
+## Get from GitHub package repo
+
+
+Configure github package repo access
+https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-apache-maven-registry#authenticating-with-a-personal-access-token
+
+Example `<profile>` section of `settings.xml` for using `cdoc2-auth-token`:
+```xml
+  <profile>
+      <id>github</id>
+      <repositories>
+        <repository>
+          <id>central</id>
+          <url>https://repo1.maven.org/maven2</url>
+        </repository>
+        <repository>
+          <id>github</id>
+          <url>https://maven.pkg.github.com/open-eid/cdoc2-auth</url>
+        </repository>
+      </repositories>
+  </profile>
+```
+
+Note: When pulling, the package index is based on the organization level, not the repository level.
+https://stackoverflow.com/questions/63041402/github-packages-single-maven-repository-for-github-organization
+
+So defining single Maven package repo from `open-eid` is enough for pulling cdoc2-* dependencies.
+
+Use in Maven pom.xml:
+
+```xml
+  <dependency>
+    <groupId>ee.cyber.cdoc2</groupId>
+    <artifactId>cdoc2-auth-token</artifactId>
+    <version>0.3.3-SNAPSHOT</version>
+  </dependency>
+```
+
+## Releasing
+
+### Versioning 
+
+cdoc2-auth uses [semantic versioning](https://semver.org/).
+
+### GitHub release
+
+[Create release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository#creating-a-release).
+It will trigger `maven-release.yml` workflow that will deploy Maven packages to GitHub Maven package repository
+and build & publish maven packages.
+
+
 
 ## cdoc2.auth-token.v1 examples
 
@@ -126,3 +177,4 @@ Other rules to validate auth ticket:
 [Verifying SD-JWT (verifying authentication ticket)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch05_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-ticket)
 
 For additional details see tests in `src/test/java/`
+
