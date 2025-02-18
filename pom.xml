@@ -11,7 +11,7 @@
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates
-        authentication tickets used to access `GET /key-shares/{shareID}` endpoint
+        authentication tickets used to access `cdoc2-shares-server` `GET /key-shares/{shareID}` endpoint
     </description>
 
     <properties>
