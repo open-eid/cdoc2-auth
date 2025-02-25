@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.3.3] First public release
+
 ## [0.3.3-SNAPSHOT] Improvements to 0.3.2-SNAPSHOT
 
 ### Changes
