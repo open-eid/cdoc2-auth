@@ -74,7 +74,7 @@ and build & publish maven packages.
 
 ## cdoc2.auth-token.v1 examples
 
-* Official documentation: [SD-JWT based CDOC2 authentication protocol](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch05_ID_authentication_protocol/) (TODO: update to final 2.0, when available)
+* Official documentation: [SD-JWT based CDOC2 authentication protocol](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch06_ID_authentication_protocol/) (TODO: update to final 2.0, when available)
 * `/key-shares` OAS specification can be found here: https://github.com/open-eid/cdoc2-openapi
 
 In short, cdoc2 key-shares auth ticket is used to authenticate against multiple key-share servers by signing
@@ -174,7 +174,7 @@ After disclosing Disclosures from sd-jwt, JWT body will be:
 
 Other rules to validate auth ticket:
 
-[Verifying SD-JWT (verifying authentication ticket)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch05_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-ticket)
+[Verifying SD-JWT (verifying authentication ticket)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch06_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-ticket)
 
 For additional details see tests in `src/test/java/`
 
