@@ -64,7 +64,7 @@ public class SessionTokenVerifier {
      *                       the JWT header
      * @return session nonce URI.
      */
-    public URI getVerifiedSessionNonce(
+    public Response getVerifiedSessionNonce(
         String tokenBase64Url,
         String certBase64Url,
         List<JWK> jwtPublicKeys
@@ -74,7 +74,10 @@ public class SessionTokenVerifier {
             certBase64Url,
             jwtPublicKeys
         );
-        return URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims));
+        return new Response(
+            URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
+            new EtsiIdentifier(verifiedDecodedClaims.get("sub").toString())
+        );
     }
 
     private Map<String, Object> getVerifiedClaims(
@@ -232,5 +235,11 @@ public class SessionTokenVerifier {
         } catch (ParseException e) {
             throw new VerificationException(e.getMessage());
         }
+    }
+
+    public record Response(
+        URI sessionNonceUri,
+        EtsiIdentifier identifier
+    ) {
     }
 }
