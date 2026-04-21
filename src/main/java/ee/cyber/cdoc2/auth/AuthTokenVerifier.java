@@ -1,5 +1,17 @@
 package ee.cyber.cdoc2.auth;
 
+import java.security.KeyStore;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.text.ParseException;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
 import com.authlete.sd.SDObjectDecoder;
@@ -15,21 +27,10 @@ import com.nimbusds.jose.jwk.ECKey;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
+
 import ee.cyber.cdoc2.auth.exception.IllegalCertificateException;
 import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdenfierException;
 import ee.cyber.cdoc2.auth.exception.VerificationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.security.KeyStore;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Class to validate cdoc2 auth tokens, created by {@link AuthTokenCreator}
@@ -42,24 +43,23 @@ public class AuthTokenVerifier {
     private static final Logger log = LoggerFactory.getLogger(AuthTokenVerifier.class);
     private static final Logger tokens_log = LoggerFactory.getLogger("tokens");
 
-    CertVerifier certVerifier;
-    Function<X509Certificate, String> extractKIDFunc;
+    private final CertVerifier certVerifier;
 
     public AuthTokenVerifier(KeyStore issuersTrustStore, boolean enableRevocationChecks) {
         this.certVerifier = new CertVerifier(issuersTrustStore, enableRevocationChecks);
-        this.extractKIDFunc = SIDCertificateUtil::getSemanticsIdentifier;
     }
 
     /**
      * Verify JWT signature and validate signing certificate.
      * Check that JWT "iss" matches certificate subjectname
      * Disclose data from sd-jwt disclosures.
+     *
      * @param token sd-jwt created by {@link AuthTokenCreator}
-     * @param cert certificate to verify token signature with
+     * @param cert  certificate to verify token signature with
      * @return verified/disclosed claims as JsonObject
      * @throws VerificationException when token doesn't verify or missing/unsupported data
-     * @throws ParseException If the string couldn't be parsed to a valid signed JWT.
-     * @throws JOSEException if signed JWT verification has failed
+     * @throws ParseException        If the string couldn't be parsed to a valid signed JWT.
+     * @throws JOSEException         if signed JWT verification has failed
      */
     public Map<String, Object> getVerifiedClaims(
         String token,
@@ -74,7 +74,7 @@ public class AuthTokenVerifier {
 
         try {
             return getVerifiedClaimsByKeyAlgorithm(token, cert);
-        } catch (IllegalCertificateException ex){
+        } catch (IllegalCertificateException ex) {
             throw new VerificationException("Failed to extract keyID from certificate", ex);
         }
     }
@@ -98,7 +98,7 @@ public class AuthTokenVerifier {
     private Map<String, Object> getVerifiedClaimsUsingRSACert(X509Certificate cert, String token)
         throws VerificationException, ParseException, JOSEException {
         //For Smart-ID this is in format PNOEE-30303039914
-        String subjectSerial = extractKIDFunc.apply(cert);
+        String subjectSerial = SIDCertificateUtil.getSemanticsIdentifier(cert);
         RSAKey jwk = new RSAKey.Builder((RSAPublicKey) cert.getPublicKey())
             .keyID(subjectSerial)
             .build();
@@ -110,7 +110,7 @@ public class AuthTokenVerifier {
         throws VerificationException, ParseException, JOSEException {
 
         //For Mobile-ID this is in format PNOEE-30303039914
-        String subjectSerial = extractKIDFunc.apply(cert);
+        String subjectSerial = SIDCertificateUtil.getSemanticsIdentifier(cert);
 
         // parse ECKey from cert (determining EC curve is a bit tricky) and then set keyID
         ECKey jwk = new ECKey.Builder(ECKey.parse(cert))
@@ -151,14 +151,15 @@ public class AuthTokenVerifier {
 
     /**
      * Verify token with pubRSAJWK and return verified claims from the token
-     * @param token token to verify
-     * @param pubKeyId public jwk kid for token verification
-     * @param jwsVerifier JWS verifier
+     *
+     * @param token                token to verify
+     * @param pubKeyId             public jwk kid for token verification
+     * @param jwsVerifier          JWS verifier
      * @param allowedKeyAlgorithms JWS algorithms that are allowed
      * @return verified claims JsonObject as Map
      * @throws VerificationException if verification of token fails
-     * @throws JOSEException if signed JWT verification has failed
-     * @throws ParseException If the string couldn't be parsed to a valid signed JWT
+     * @throws JOSEException         if signed JWT verification has failed
+     * @throws ParseException        If the string couldn't be parsed to a valid signed JWT
      */
     private static Map<String, Object> getVerifiedClaims(
         String token,
@@ -215,12 +216,12 @@ public class AuthTokenVerifier {
         if (tokens_log.isDebugEnabled()) {
             tokens_log.debug("Claims: {}", signedClaimsMap);
             tokens_log.debug("Disclosures: {}", sdJwt.getDisclosures().stream()
-                .map(d-> d.digest() + ": " + d.getJson()).toList());
+                .map(d -> d.digest() + ": " + d.getJson()).toList());
         }
 
         List<Disclosure> disclosures = sdJwt.getDisclosures();
 
-        for(Disclosure disclosure: disclosures) {
+        for (Disclosure disclosure : disclosures) {
             if (log.isDebugEnabled()) {
                 log.debug("disclosure: ({}) {}={}",
                     disclosure.digest(),
@@ -230,19 +231,17 @@ public class AuthTokenVerifier {
         }
 
         SDObjectDecoder decoder = new SDObjectDecoder();
+
         // initial jwt contains "_sd" and "_sd_alg"
         // {iss=etsi/PNOEE-30303039914, _sd=[dtGzdbCMa_byJAeCW-I0UYpxmtJZyFcszns8dsAYWTE], _sd_alg=sha-256}
-        var decoded = decoder.decode(signedClaimsMap, disclosures);
-
-        //First decoded disclosure still contains digest(s) for "aud" value:
-        // {iss=etsi/PNOEE-30303039914, aud=[{...=ninhZYyUqlOn4i-5VNGv--6LzO-APfhWLKscldaTq3c}]}
-        // decode "aud" values remaining digests and disclosures
-        // if everything is already decoded, just return it
-
-        return decoder.decode(decoded, disclosures); //will return fully decoded claims:
+        //
+        // First disclosure represents the "aud" field, second disclosure values in the "aud" array.
+        //
+        // SDObjectDecoder.decode works recursively, so a single decode operation will result in:
         // {
         // iss=etsi/PNOEE-30303039914,
         // aud=[https://cdoc-ccs.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3?nonce=59..b6]
         // }
+        return decoder.decode(signedClaimsMap, disclosures);
     }
 }

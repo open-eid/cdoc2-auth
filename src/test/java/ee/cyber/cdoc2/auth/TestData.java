@@ -1,16 +1,5 @@
 package ee.cyber.cdoc2.auth;
 
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.util.X509CertUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,8 +11,20 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.Set;
 import java.util.List;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.crypto.ECDSASigner;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.jwk.ECKey;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.util.X509CertUtils;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -92,60 +93,83 @@ public final class TestData {
     // mock service certificate
     public static final String TEST_RSA_CERT_PEM = "-----BEGIN CERTIFICATE-----"
         + """
-        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
+        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
+        6HTOS2kp2p8Jv6vyLPj4q5/FbtlrWasK+i80
         """.replaceAll("\\s", "")
         + "-----END CERTIFICATE-----"; //remove all whitespace
 
     // SK-CA.localhost.crt
     public static final String TEST_RSA_CERT_ISSUER_PEM = """
         -----BEGIN CERTIFICATE-----
-        MIIB7jCCAZOgAwIBAgIUc3AeVxEYSTyVlAXpkFxs/G3OKD4wCgYIKoZIzj0EAwQw
-        TDELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xETAPBgNVBAoMCHNrLWxv
-        Y2FsMRgwFgYDVQQDDA9zay1jYS5sb2NhbGhvc3QwHhcNMjQxMTA0MTM0MjEwWhcN
-        MjUxMTA0MTM0MjEwWjBMMQswCQYDVQQGEwJFRTEQMA4GA1UEBwwHVGFsbGlubjER
-        MA8GA1UECgwIc2stbG9jYWwxGDAWBgNVBAMMD3NrLWNhLmxvY2FsaG9zdDBZMBMG
-        ByqGSM49AgEGCCqGSM49AwEHA0IABIIMkZNhqQizD1kHUcyFEKGA8b+SXua07Fvl
-        O67ZyCNq+uQggVh0szDURFDzaNDFQDY0R5ac9mL2+4NxPyCmihijUzBRMB0GA1Ud
-        DgQWBBRuzdu1wEFgGf5HC8ORIb0bPZLGXzAfBgNVHSMEGDAWgBRuzdu1wEFgGf5H
-        C8ORIb0bPZLGXzAPBgNVHRMBAf8EBTADAQH/MAoGCCqGSM49BAMEA0kAMEYCIQD0
-        Wb6Dy2G+NPFaKQQ6SpJl5QNMJ0mMagbSz48Sky8DpAIhAOvVu2zPH4aaqiZhZCq7
-        6ReVJoevfe0/H0JM7AciG+1P
+        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
         -----END CERTIFICATE-----""";
 
     // 30303039914 ECDSA certificate
     private static final String TEST_ECDSA_CERT_PEM = """
         -----BEGIN CERTIFICATE-----
-        MIICDzCCAbWgAwIBAgIUVn26RKn5tb6rOhO4sMrInr8UgxEwCgYIKoZIzj0EAwQw
-        TTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xDzANBgNVBAoMBi1sb2Nh
-        bDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MB4XDTI1MDExMzE2MDE1OFoX
-        DTI2MDExMzE2MDE1OFowYzEaMBgGA1UEBRMRUE5PRUUtMzAzMDMwMzk5MTQxCzAJ
-        BgNVBCoMAk9LMRMwEQYDVQQEDApURVNUTlVNQkVSMRYwFAYDVQQDDA1URVNUTlVN
-        QkVSLE9LMQswCQYDVQQGEwJFRTBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABAWe
-        VJrrXvoxM0smdRMl6pfmRLeHFVl9cBu9V2tLyTPVbWGM9KTWMtTK+Z8cuJP/9Qwf
-        VYbyildK3Ljh0e3DoDyjXTBbMB8GA1UdIwQYMBaAFMOo1Ks+YOgIJxdsDy4nChTP
-        jAlvMAwGA1UdEwEB/wQCMAAwCwYDVR0PBAQDAgWgMB0GA1UdDgQWBBRLVYFQ5JNE
-        dGE3HjPOHWGWNebXmTAKBggqhkjOPQQDBANIADBFAiEA32rCmKZd5uho96r3zhWb
-        e6SuLRYHAsuUqj5IcMx8cJ0CIA8ntNP2P2oAQRf0wmypbvzyirYtu6Im1hf1vh/Y
-        BX2H
+        MIIBmzCCAUECFF9hc9Ki0ViUcYYUma+tY94JJLa0MAoGCCqGSM49BAMCMEUxCzAJ
+        BgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5l
+        dCBXaWRnaXRzIFB0eSBMdGQwHhcNMjYwNDA2MDk0NTEzWhcNMzYwNDAzMDk0NTEz
+        WjBbMQswCQYDVQQGEwJFRTEOMAwGA1UEAwwFVEVTVE4xEzARBgNVBAQMClRFU1RO
+        VU1CRVIxCzAJBgNVBCoMAk9LMRowGAYDVQQFExFQTk9FRS0zMDMwMzAzOTkxNDBZ
+        MBMGByqGSM49AgEGCCqGSM49AwEHA0IABAWeVJrrXvoxM0smdRMl6pfmRLeHFVl9
+        cBu9V2tLyTPVbWGM9KTWMtTK+Z8cuJP/9QwfVYbyildK3Ljh0e3DoDwwCgYIKoZI
+        zj0EAwIDSAAwRQIgCdbyIvUaVrcsd0770S24Ws4MkyQXzf8o0KwC+IAWpB8CIQCs
+        az188UqqiflisAEyqfmmMxl+6BybgktIreJ0sv5odg==
         -----END CERTIFICATE-----""";
 
     // 30303039914 ECDSA certificate private key
@@ -159,17 +183,17 @@ public final class TestData {
     // ECDSA cyber-ca.localhost.crt
     public static final String TEST_ECDSA_CERT_ISSUER_PEM = """
         -----BEGIN CERTIFICATE-----
-        MIIB8DCCAZWgAwIBAgIUH+YPt2fcRJtQnv0S0qaepo11SnUwCgYIKoZIzj0EAwQw
-        TTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4xDzANBgNVBAoMBi1sb2Nh
-        bDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MB4XDTI1MDExMzE1NTc0MloX
-        DTI2MDExMzE1NTc0MlowTTELMAkGA1UEBhMCRUUxEDAOBgNVBAcMB1RhbGxpbm4x
-        DzANBgNVBAoMBi1sb2NhbDEbMBkGA1UEAwwSY3liZXItY2EubG9jYWxob3N0MFkw
-        EwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAERSZfTmk6OZhO55tULRJMn4ALjblWXoxI
-        tbo+mj0isO8lO8kbdwAu8b3ndJ6OJrdFxs9znhEbwtwOk7TB8fxNc6NTMFEwHQYD
-        VR0OBBYEFMOo1Ks+YOgIJxdsDy4nChTPjAlvMB8GA1UdIwQYMBaAFMOo1Ks+YOgI
-        JxdsDy4nChTPjAlvMA8GA1UdEwEB/wQFMAMBAf8wCgYIKoZIzj0EAwQDSQAwRgIh
-        AMNstkihBiWmsQnfDnxuu9yPSG0XQLxjlf6seUh7Wh5RAiEA/y9FA8R1kuelLxWs
-        Yro9lhiEr72sQG//4CDRjTxuT7E=
+        MIIB3zCCAYWgAwIBAgIUM+gmA5cIzIoTe3s+xnbcFhBpq0kwCgYIKoZIzj0EAwIw
+        RTELMAkGA1UEBhMCQVUxEzARBgNVBAgMClNvbWUtU3RhdGUxITAfBgNVBAoMGElu
+        dGVybmV0IFdpZGdpdHMgUHR5IEx0ZDAeFw0yNjA0MDYwOTQyMDRaFw0zNjA0MDMw
+        OTQyMDRaMEUxCzAJBgNVBAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYD
+        VQQKDBhJbnRlcm5ldCBXaWRnaXRzIFB0eSBMdGQwWTATBgcqhkjOPQIBBggqhkjO
+        PQMBBwNCAAQFnlSa6176MTNLJnUTJeqX5kS3hxVZfXAbvVdrS8kz1W1hjPSk1jLU
+        yvmfHLiT//UMH1WG8opXSty44dHtw6A8o1MwUTAdBgNVHQ4EFgQUS1WBUOSTRHRh
+        Nx4zzh1hljXm15kwHwYDVR0jBBgwFoAUS1WBUOSTRHRhNx4zzh1hljXm15kwDwYD
+        VR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNIADBFAiEA5E7D18NyUF9elYJ1y5Dm
+        nwo50RH1tRkYwd108d9R1FECIHdJEq2SZieyGtKVgPYR0HO8qv6BXRkSFBdxcuOT
+        v1P+
         -----END CERTIFICATE-----""";
 
     // CA certificate for Smart-id test account PNOEE-30303039914
@@ -321,11 +345,23 @@ public final class TestData {
         return trustStore;
     }
 
+    public static KeyStore createTestIssuerTrustStoreFromCerts(List<X509Certificate> certificates)
+        throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
+
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        trustStore.load(null, null);
+
+        for (X509Certificate cert : certificates) {
+            trustStore.setCertificateEntry(cert.getSubjectX500Principal().getName(), cert);
+        }
+        return trustStore;
+    }
+
     public static KeyStore createEmptyTrustStore()
         throws KeyStoreException, CertificateException, IOException, NoSuchAlgorithmException {
-            KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            trustStore.load(null, null);
-            return trustStore;
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        trustStore.load(null, null);
+        return trustStore;
     }
 
     public static X509Certificate loadDefaultTestCert(JWSAlgorithm.Family pubKeyAlgorithm)
@@ -360,7 +396,7 @@ public final class TestData {
             nonce,
             SID_PUBLIC_KEY_ALGORITHM,
             TEST_RSA_CERT_PEM
-            );
+        );
     }
 
     public static String generateTestAuthTicketWithEcdsaKey(
@@ -381,12 +417,13 @@ public final class TestData {
 
     /**
      * Generate Auth ticket with TestData.TEST_RSAKEY.
+     *
      * @param semanticsIdentifier example PNOEE-30303039914
-     * @param serverUrl server URL
-     * @param shareId share ID
-     * @param nonce nonce
-     * @param pubKeyAlgorithm public key algorithm
-     * @param certificate certificate
+     * @param serverUrl           server URL
+     * @param shareId             share ID
+     * @param nonce               nonce
+     * @param pubKeyAlgorithm     public key algorithm
+     * @param certificate         certificate
      * @return authentication ticket
      */
     private static String generateTestAuthTicket(
@@ -423,7 +460,7 @@ public final class TestData {
         return token.createTicketForShareId(shareId);
     }
 
-    private static void signAuthToken(AuthTokenCreator token,  JWSAlgorithm.Family pubKeyAlgorithm)
+    private static void signAuthToken(AuthTokenCreator token, JWSAlgorithm.Family pubKeyAlgorithm)
         throws JOSEException, CertificateException, ParseException {
 
         if (pubKeyAlgorithm.equals(SID_PUBLIC_KEY_ALGORITHM)) {

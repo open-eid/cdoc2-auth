@@ -6,7 +6,7 @@
 
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
-    <version>0.3.3</version>
+    <version>0.4.3</version>
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates
@@ -17,9 +17,9 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <sd-jwt.version>1.4</sd-jwt.version>
-        <logback.version>1.5.16</logback.version>
-        <nimbus-jose-jwt.version>10.0.1</nimbus-jose-jwt.version>
+        <sd-jwt.version>1.8</sd-jwt.version>
+        <logback.version>1.5.32</logback.version>
+        <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
         <junit-jupiter.version>5.10.3</junit-jupiter.version>
     </properties>
 
@@ -119,6 +119,13 @@
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>${nimbus-jose-jwt.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>tools.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>3.1.2</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
