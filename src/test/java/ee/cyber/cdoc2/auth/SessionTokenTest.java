@@ -102,7 +102,7 @@ public class SessionTokenTest {
         URI verifiedNonceUri = defaultSessionTokenVerifier.getVerifiedSessionNonce(
             sdJwtWithFilteredDisclosures,
             SID_SIGNING_CERTIFICATE_BASE64URL,
-            JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON)
+            List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
         );
 
         Assertions.assertNotNull(verifiedNonceUri);
@@ -114,7 +114,7 @@ public class SessionTokenTest {
             () -> defaultSessionTokenVerifier.getVerifiedSessionNonce(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
-                JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON)
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
             )
         );
 
@@ -136,7 +136,7 @@ public class SessionTokenTest {
             () -> sessionTokenVerifier.getVerifiedSessionNonce(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
-                JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON)
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
             )
         );
 
@@ -158,7 +158,7 @@ public class SessionTokenTest {
             () -> sessionTokenVerifier.getVerifiedSessionNonce(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
-                JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON)
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
             )
         );
 
@@ -180,7 +180,7 @@ public class SessionTokenTest {
             () -> sessionTokenVerifier.getVerifiedSessionNonce(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
-                JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON)
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
             )
         );
 
