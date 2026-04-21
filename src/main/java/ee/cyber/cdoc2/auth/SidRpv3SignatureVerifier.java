@@ -15,14 +15,12 @@ import java.util.Objects;
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
 
-public class SidRpv3SignatureVerifier {
-    private final SidRpv3SignatureVerifierConfig config;
-
-    public SidRpv3SignatureVerifier(SidRpv3SignatureVerifierConfig config) {
-        this.config = config;
+public final class SidRpv3SignatureVerifier {
+    private SidRpv3SignatureVerifier() {
+        // utility class
     }
 
-    public boolean isValid(
+    public static boolean isValid(
         String signatureValueBase64Url,
         PublicKey publicKey,
         SignatureValidationParams params
@@ -42,7 +40,7 @@ public class SidRpv3SignatureVerifier {
         }
     }
 
-    private boolean validate(
+    private static boolean validate(
         byte[] signatureBytes,
         PublicKey publicKey,
         SignatureValidationParams params
@@ -50,10 +48,10 @@ public class SidRpv3SignatureVerifier {
         SignatureException, NoSuchAlgorithmException {
 
         String separator = "|";
-        String schemeName = config.schemeName;
+        String schemeName = params.schemeName;
         String signatureProtocol = "ACSP_V2";
         String relyingPartyNameBase64 = Base64.getEncoder()
-            .encodeToString(config.rpName.getBytes(StandardCharsets.UTF_8));
+            .encodeToString(params.rpName.getBytes(StandardCharsets.UTF_8));
         String brokeredRpNameBase64 = "";
         String initialCallbackUrl = "";
         String flowType = params.sidSignature.flowType;
@@ -101,6 +99,8 @@ public class SidRpv3SignatureVerifier {
         String rpChallenge,
         String interactionsDigest,
         String interactionTypeUsed,
+        String schemeName,
+        String rpName,
         SidSignature sidSignature
     ) {
     }
@@ -134,9 +134,4 @@ public class SidRpv3SignatureVerifier {
         }
     }
 
-    public record SidRpv3SignatureVerifierConfig(
-        String schemeName,
-        String rpName
-    ) {
-    }
 }

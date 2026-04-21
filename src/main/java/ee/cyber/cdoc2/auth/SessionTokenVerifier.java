@@ -41,22 +41,13 @@ public class SessionTokenVerifier {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final CertVerifier certVerifier;
-    private final SidRpv3SignatureVerifier sidSignatureVerifier;
     private final SDObjectDecoder sdObjectDecoder;
 
     public SessionTokenVerifier(
         KeyStore issuersTrustStore,
-        boolean enableRevocationChecks,
-        String schemeName,
-        String rpName
+        boolean enableRevocationChecks
     ) {
         this.certVerifier = new CertVerifier(issuersTrustStore, enableRevocationChecks);
-        this.sidSignatureVerifier = new SidRpv3SignatureVerifier(
-            new SidRpv3SignatureVerifier.SidRpv3SignatureVerifierConfig(
-                schemeName,
-                rpName
-            )
-        );
         this.sdObjectDecoder = new SDObjectDecoder();
     }
 
@@ -120,7 +111,7 @@ public class SessionTokenVerifier {
         SignatureValidationParams validationParams = createSidSignatureValidationParams(signedJWT);
         PublicKey certPublicKey = cert.getPublicKey();
 
-        if (sidSignatureVerifier.isValid(null, certPublicKey, validationParams)) {
+        if (SidRpv3SignatureVerifier.isValid(null, certPublicKey, validationParams)) {
             return decodeSdJwtClaims(claimsSet, sdjwt.getDisclosures());
         } else {
             throw new VerificationException("Invalid SID signature");
@@ -227,11 +218,15 @@ public class SessionTokenVerifier {
             String rpChallengeBase64 = claimsSet.getClaimAsString("rpChallenge");
             String interactionsDigestBase64 = claimsSet.getClaimAsString("interactionsDigest");
             String interactionTypeUsed = claimsSet.getClaimAsString("interactionTypeUsed");
+            String schemeName = claimsSet.getClaimAsString("schemeName");
+            String rpName = claimsSet.getClaimAsString("rpName");
 
             return new SignatureValidationParams(
                 rpChallengeBase64,
                 interactionsDigestBase64,
                 interactionTypeUsed,
+                schemeName,
+                rpName,
                 sidSignature
             );
         } catch (ParseException e) {
