@@ -69,19 +69,19 @@ public class SessionTokenVerifier {
      *
      * @param tokenBase64Url session token in BASE64URL encoding
      * @param certBase64Url  signing certificate in BASE64URL encoding
-     * @param keys           List of JWK public keys that will be filtered for match with kid in
+     * @param jwtPublicKeys  List of JWK public keys that will be filtered for match with kid in
      *                       the JWT header
      * @return session nonce URI.
      */
     public URI getVerifiedSessionNonce(
         String tokenBase64Url,
         String certBase64Url,
-        List<JWK> keys
+        List<JWK> jwtPublicKeys
     ) throws VerificationException {
         Map<String, Object> verifiedDecodedClaims = getVerifiedClaims(
             tokenBase64Url,
             certBase64Url,
-            keys
+            jwtPublicKeys
         );
         return URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims));
     }
@@ -89,11 +89,11 @@ public class SessionTokenVerifier {
     private Map<String, Object> getVerifiedClaims(
         String tokenBase64Url,
         String certBase64Url,
-        List<JWK> keys
+        List<JWK> jwtPublicKeys
     ) throws VerificationException {
         Objects.requireNonNull(tokenBase64Url);
         Objects.requireNonNull(certBase64Url);
-        Objects.requireNonNull(keys);
+        Objects.requireNonNull(jwtPublicKeys);
 
         X509Certificate cert = X509CertUtils.parse(Base64.getUrlDecoder().decode(certBase64Url));
 
@@ -103,7 +103,7 @@ public class SessionTokenVerifier {
         SignedJWT signedJWT = getSignedJwt(sdjwt.getCredentialJwt());
         String kid = signedJWT.getHeader().getKeyID();
 
-        JWK jwk = keys.stream().filter(key -> key.getKeyID().equals(kid))
+        JWK jwk = jwtPublicKeys.stream().filter(key -> key.getKeyID().equals(kid))
             .findFirst().orElseThrow(() -> new VerificationException("No key found matching kid " +
                 "in JWT header"));
 
