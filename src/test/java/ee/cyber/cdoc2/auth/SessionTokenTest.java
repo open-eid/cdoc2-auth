@@ -107,8 +107,8 @@ public class SessionTokenTest {
             SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL, "session_nonce_2"
         );
 
-        SessionTokenVerifier.Response response =
-            defaultSessionTokenVerifier.getVerifiedSessionNonce(
+        TokenVerificationResponse response =
+            defaultSessionTokenVerifier.verify(
                 sdJwtWithFilteredDisclosures,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
@@ -121,7 +121,7 @@ public class SessionTokenTest {
     @Test
     void verifyTokenFailWithMoreThanOneAudElementDisclosed() {
         VerificationException exception = Assertions.assertThrows(VerificationException.class,
-            () -> defaultSessionTokenVerifier.getVerifiedSessionNonce(
+            () -> defaultSessionTokenVerifier.verify(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
@@ -142,7 +142,7 @@ public class SessionTokenTest {
         );
 
         VerificationException exception = Assertions.assertThrows(VerificationException.class,
-            () -> sessionTokenVerifier.getVerifiedSessionNonce(
+            () -> sessionTokenVerifier.verify(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
@@ -163,7 +163,7 @@ public class SessionTokenTest {
         );
 
         VerificationException exception = Assertions.assertThrows(VerificationException.class,
-            () -> sessionTokenVerifier.getVerifiedSessionNonce(
+            () -> sessionTokenVerifier.verify(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
@@ -184,7 +184,7 @@ public class SessionTokenTest {
         );
 
         VerificationException exception = Assertions.assertThrows(VerificationException.class,
-            () -> sessionTokenVerifier.getVerifiedSessionNonce(
+            () -> sessionTokenVerifier.verify(
                 SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))

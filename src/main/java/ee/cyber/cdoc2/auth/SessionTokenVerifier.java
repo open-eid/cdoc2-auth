@@ -63,7 +63,6 @@ public class SessionTokenVerifier {
      * Disclosed aud array must have exactly one element.
      * On successful verification returns a response object containing: a single session nonce
      * URI, ETSI identifier parsed from the token 'sub' claim.
-     * in validation checks by the caller
      *
      * @param tokenBase64Url session token in BASE64URL encoding
      * @param certBase64Url  signing certificate in BASE64URL encoding
@@ -71,7 +70,7 @@ public class SessionTokenVerifier {
      *                       the JWT header
      * @return session nonce URI.
      */
-    public Response getVerifiedSessionNonce(
+    public TokenVerificationResponse verify(
         String tokenBase64Url,
         String certBase64Url,
         List<JWK> jwtPublicKeys
@@ -81,7 +80,7 @@ public class SessionTokenVerifier {
             certBase64Url,
             jwtPublicKeys
         );
-        return new Response(
+        return new TokenVerificationResponse(
             URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
             new EtsiIdentifier(verifiedDecodedClaims.get("sub").toString())
         );
@@ -255,11 +254,5 @@ public class SessionTokenVerifier {
         } catch (ParseException e) {
             throw new VerificationException(e.getMessage());
         }
-    }
-
-    public record Response(
-        URI sessionNonceUri,
-        EtsiIdentifier identifier
-    ) {
     }
 }
