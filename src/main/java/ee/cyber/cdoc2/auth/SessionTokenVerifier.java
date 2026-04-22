@@ -9,8 +9,10 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -42,13 +44,16 @@ public class SessionTokenVerifier {
 
     private final CertVerifier certVerifier;
     private final SDObjectDecoder sdObjectDecoder;
+    private final Clock clock;
 
     public SessionTokenVerifier(
         KeyStore issuersTrustStore,
-        boolean enableRevocationChecks
+        boolean enableRevocationChecks,
+        Clock clock
     ) {
         this.certVerifier = new CertVerifier(issuersTrustStore, enableRevocationChecks);
         this.sdObjectDecoder = new SDObjectDecoder();
+        this.clock = clock;
     }
 
     /**
@@ -106,6 +111,8 @@ public class SessionTokenVerifier {
         }
 
         JWTClaimsSet claimsSet = getClaimSet(signedJWT);
+
+        validateIssuanceAndExpiry(claimsSet);
 
         if (!jwtSubMatchesCert(cert, claimsSet)) {
             throw new VerificationException("JWT sub does not mach signing certificate");
@@ -174,6 +181,17 @@ public class SessionTokenVerifier {
             return signedJWT.verify(jwsVerifier);
         } catch (JOSEException e) {
             throw new VerificationException("JWS could not be verified");
+        }
+    }
+
+    private void validateIssuanceAndExpiry(JWTClaimsSet claimsSet) throws VerificationException {
+        Date expiresAt = claimsSet.getExpirationTime();
+        Date issuedAt = claimsSet.getIssueTime();
+        if (clock.instant().isAfter(expiresAt.toInstant())) {
+            throw new VerificationException("Token has expired");
+        }
+        if (clock.instant().isBefore(issuedAt.toInstant())) {
+            throw new VerificationException("Invalid token issuance time");
         }
     }
 

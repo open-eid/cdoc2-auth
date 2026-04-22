@@ -1,6 +1,9 @@
 package ee.cyber.cdoc2.auth;
 
 import java.security.cert.X509Certificate;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Base64;
 import java.util.List;
 
@@ -80,19 +83,27 @@ public class SessionTokenTest {
           "kid" : "ec-key-2026"
         }""";
 
+    private static final Clock CLOCK_SESSION_TOKEN_NOT_EXPIRED =
+        Clock.fixed(Instant.parse("2026-04-22T12:30:00Z"), ZoneOffset.UTC);
+    private static final Clock CLOCK_SESSION_TOKEN_EXPIRED =
+        Clock.fixed(Instant.parse("2026-04-23T12:30:00Z"), ZoneOffset.UTC);
+    private static final Clock CLOCK_SESSION_TOKEN_INVALID_ISSUANCE =
+        Clock.fixed(Instant.parse("2026-04-21T12:30:00Z"), ZoneOffset.UTC);
+
     private SessionTokenVerifier defaultSessionTokenVerifier;
 
     @BeforeEach
     void setUp() throws Exception {
         defaultSessionTokenVerifier = new SessionTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(ROOT_CERT, ISSUING_CERT)),
-            true
+            true,
+            CLOCK_SESSION_TOKEN_NOT_EXPIRED
         );
     }
 
     @Test
     void verifyTokenSuccess() throws Exception {
-        String sdJwtWithFilteredDisclosures = SessionTokenHelper.discloseByClaimValue(
+        String sdJwtWithFilteredDisclosures = SessionTokenDisclosureHelper.discloseByClaimValue(
             SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL, "session_nonce_2"
         );
 
@@ -126,7 +137,9 @@ public class SessionTokenTest {
     void verifyTokenFailWithIssuingCertMissing() throws Exception {
         SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(ROOT_CERT)),
-            true);
+            true,
+            CLOCK_SESSION_TOKEN_NOT_EXPIRED
+        );
 
         VerificationException exception = Assertions.assertThrows(VerificationException.class,
             () -> sessionTokenVerifier.getVerifiedSessionNonce(
@@ -138,6 +151,48 @@ public class SessionTokenTest {
 
         assertTrue(exception.getMessage()
                 .contains("Certificate validation error"),
+            "Actual message: " + exception.getMessage());
+    }
+
+    @Test
+    void verifyTokenFailWhenTokenExpired() throws Exception {
+        SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
+            TestData.createTestIssuerTrustStoreFromCerts(List.of(ISSUING_CERT)),
+            true,
+            CLOCK_SESSION_TOKEN_EXPIRED
+        );
+
+        VerificationException exception = Assertions.assertThrows(VerificationException.class,
+            () -> sessionTokenVerifier.getVerifiedSessionNonce(
+                SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
+                SID_SIGNING_CERTIFICATE_BASE64URL,
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
+            )
+        );
+
+        assertTrue(exception.getMessage()
+                .contains("Token has expired"),
+            "Actual message: " + exception.getMessage());
+    }
+
+    @Test
+    void verifyTokenFailWhenTokenIssuedInFuture() throws Exception {
+        SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
+            TestData.createTestIssuerTrustStoreFromCerts(List.of(ISSUING_CERT)),
+            true,
+            CLOCK_SESSION_TOKEN_INVALID_ISSUANCE
+        );
+
+        VerificationException exception = Assertions.assertThrows(VerificationException.class,
+            () -> sessionTokenVerifier.getVerifiedSessionNonce(
+                SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
+                SID_SIGNING_CERTIFICATE_BASE64URL,
+                List.of(JWK.parse(AUTH_SERVER_WELL_KNOWN_JWK_JSON))
+            )
+        );
+
+        assertTrue(exception.getMessage()
+                .contains("Invalid token issuance time"),
             "Actual message: " + exception.getMessage());
     }
 }

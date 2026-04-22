@@ -6,9 +6,9 @@ import java.util.Optional;
 import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
 
-public final class SessionTokenHelper {
+public final class SessionTokenDisclosureHelper {
 
-    private SessionTokenHelper() {
+    private SessionTokenDisclosureHelper() {
         // utility class
     }
 
