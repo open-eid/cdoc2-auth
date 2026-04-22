@@ -12,7 +12,16 @@ public final class SessionTokenDisclosureHelper {
         // utility class
     }
 
-    public static String discloseByClaimValue(String sessionTokenBase64Url, String claimValue) {
+    /**
+     * Transforms an SD-JWT with an obfuscated 'aud' claim and 1..n aud array element disclosures
+     * into and SD-JWT with and 'aud' disclosure and one aud array element disclosure, filtering
+     * aud array element disclosures by claimValue
+     *
+     * @param sessionTokenBase64Url SD-JWT
+     * @param claimValue            value used to filter aud array element disclosures
+     * @return Base64Url encoded SD-JWT
+     */
+    public static String discloseAudByClaimValue(String sessionTokenBase64Url, String claimValue) {
         SDJWT sdjwt = SDJWT.parse(sessionTokenBase64Url);
 
         List<Disclosure> disclosures = sdjwt.getDisclosures();
