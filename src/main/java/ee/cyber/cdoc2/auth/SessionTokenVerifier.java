@@ -24,6 +24,7 @@ import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
 import com.authlete.sd.SDObjectDecoder;
 import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.crypto.RSASSAVerifier;
@@ -101,7 +102,14 @@ public class SessionTokenVerifier {
 
         SDJWT sdjwt = SDJWT.parse(tokenBase64Url);
         SignedJWT signedJWT = getSignedJwt(sdjwt.getCredentialJwt());
-        String kid = signedJWT.getHeader().getKeyID();
+
+        JWSHeader header = signedJWT.getHeader();
+
+        if (!Constants.TYPE_SESSION_TOKEN.equals(header.getType().toString())) {
+            throw new VerificationException("Unsupported \"typ\" " + header.getType());
+        }
+
+        String kid = header.getKeyID();
 
         JWK jwk = jwtPublicKeys.stream().filter(key -> key.getKeyID().equals(kid))
             .findFirst().orElseThrow(() -> new VerificationException("No key found matching kid " +

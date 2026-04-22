@@ -179,7 +179,7 @@ public class AuthTokenVerifier {
         }
 
         if (header.getType() == null ||
-            !Constants.TYPE.equals(signedJWT.getHeader().getType().toString())
+            !Constants.TYPE_AUTH_TOKEN.equals(signedJWT.getHeader().getType().toString())
         ) {
             throw new VerificationException("Unsupported \"typ\" " + header.getType());
         }

@@ -103,7 +103,7 @@ public class SessionTokenTest {
 
     @Test
     void verifyTokenSuccess() throws Exception {
-        String sdJwtWithFilteredDisclosures = SessionTokenDisclosureHelper.discloseByClaimValue(
+        String sdJwtWithFilteredDisclosures = SessionTokenDisclosureHelper.discloseAudByClaimValue(
             SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL, "session_nonce_2"
         );
 
