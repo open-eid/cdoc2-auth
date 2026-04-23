@@ -1,20 +1,17 @@
 package ee.cyber.cdoc2.auth;
 
-import com.nimbusds.jose.util.X509CertUtils;
-
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 
-import static ee.cyber.cdoc2.auth.TestData.MID_PUBLIC_KEY_ALGORITHM;
-import static ee.cyber.cdoc2.auth.TestData.SID_PUBLIC_KEY_ALGORITHM;
-import static ee.cyber.cdoc2.auth.TestData.TEST_ECDSA_CERT_ISSUER_PEM;
-import static ee.cyber.cdoc2.auth.TestData.TEST_RSA_CERT_ISSUER_PEM;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.nimbusds.jose.util.X509CertUtils;
+
+import static ee.cyber.cdoc2.auth.TestData.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class AuthTest {
@@ -106,7 +103,7 @@ class AuthTest {
     void testGenerateVerifyTicketWithRsaKey() throws Exception {
         EtsiIdentifier recipient = new EtsiIdentifier("etsi/PNOEE-" + TestData.TEST_IDENTIFIER);
 
-        String sdjwt0  = TestData.generateTestAuthTicketWithRsaKey(
+        String sdjwt0 = TestData.generateTestAuthTicketWithRsaKey(
             recipient.getSemanticsIdentifier(),
             "https://css.ria.ee:443",
             "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
@@ -130,7 +127,7 @@ class AuthTest {
     void testGenerateVerifyTicketWithEcdsaKey() throws Exception {
         EtsiIdentifier recipient = new EtsiIdentifier("etsi/PNOEE-" + TestData.TEST_IDENTIFIER);
 
-        String sdjwt0  = TestData.generateTestAuthTicketWithEcdsaKey(
+        String sdjwt0 = TestData.generateTestAuthTicketWithEcdsaKey(
             recipient.getSemanticsIdentifier(),
             "https://css.ria.ee:443",
             "9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3",
@@ -156,31 +153,31 @@ class AuthTest {
         // see AuthTokenCreatorTest::testCreateAuthToken in cdoc2-java-ref-imp
         // use https://sdjwt.org to decode
         final String token1 = """
-        eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJSUzI1NiJ9
-        .
-        eyJpc3MiOiJldHNpL1BOT0VFLTMwMzAzMDM5OTE0IiwiX3NkIjpbIlZUZnV0bWtpdUJMWW5Sczl6dzBDZ2s5X0x3b09uSWhWd
-        GZNcXlMUHdSZjAiXSwiX3NkX2FsZyI6InNoYS0yNTYifQ
-        .
-        CA_tlS6sfG6DTx2RWF2_fNizVC8P2fHcitiUQNH5LNIEKfzwtT310rDn635VHSkFiPkYawpd-g6dJQUO6PN229KNA5qtoMi8T
-        a6dc-eCJ9dgHdnSdX-UBkUo4ZPct51dFpoFK_9L3vMpHneT_WRdaXXzMaTrEjD1dIPZ0YAZNY9R_jLYbRYYc-9_YbEtoRdAMCo
-        2kf9znoNfNcX1Tvt2wTJPR1FEqOT54DShTDywGbxX_w6mdFxirr0n9jkiZiDwQyvP7JN7s7x1CD6xsH-DyVh88mtPHLpRH42XC
-        qF_oBQ_BkAF_GoHYR43mk_C0zVg4PNsQ4eMKme3HW2HhyLUtDWOoF3OfiDdRX19ckPUAxh1C0N27g0nHroHYcyogu7cZ_qTaOE
-        3DmTRsymXErSfFXFYrr3CGetxERT6TzGzL-ycKcz-r7nwejhsgny2sgZDvQ0lvSPmiejldsqhkNGQcpnBF6JfX0V5fLLzLdU_c
-        mDBig1TLP-y8ic2xG6F-_Yojs8iL7b3DhEmeOXeqkrAT93pqW_HEbS6dyoY1Oi7xJuj6h3d-QJRgSBrUihf4EnD5XhvFFU8AXF
-        YhRsuyPOWBTtLiV9hvi7TKOUMPwY9EONpNQQiqFS_roMu4vaqLKve00bFDHGT09-dLt4suNA7cStVO-A2IDey9MfQ_bmuQT-6q
-        t02O-nZt4be6R0l0bf7HRlPl-RAThi8lP9qgOFP1ID0oRfK3ralrxGr8e4hjVrJhUSNJ9XAPJBVYdwJtPfee5DckR9HxJ53si3
-        FSPOdtnPsCL8pqCU1nMmdSttLllOEvg5oDtHjgoQGXgrCHU2w284TbZl0i86k910XfA-WcBz8Af9fK_QyoNC8UL01Nqc1ZmF1q
-        j702iRJ6gl__KDmzLh5aPjKec5SFrBXxJJzjUDCU8wLK5EHtKnOUSGb6Uo2TeTgAbtnCuNRwMcmyOMyDomNsJ2QaMPOYeHeCby
-        E3cRhkrIoymNZsSop9gnCz1V9wZR6SvMMLu4ahmfyHD86
-        ~
-        WyJNdVNxMjlKeFEyallWV2k2NTZuV0lBIiwiYXVkIixbeyIuLi4iOiJ4a0JmWFpacmx5N2RQWTB2YmtwbjRoSGZkQnhxQWYtcD
-        B1cDdxUkdIX1drIn0seyIuLi4iOiJiclFTUEhZYnZaOWZzdm1LQ1dZQ2hGVXdtMjhTclo2b3F3S3RYNk1yRXpBIn1dXQ
-        ~
-        WyJxSTJPTFlqRXU4bVlxamt5N1FodUhnIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNT
-        A2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlXHUwMDNkQUFFQ0F3UUZCZ2N
-        JQ1FvTERBNE5fdyJd
-        ~
-        """.replaceAll("\\s", ""); //remove all whitespace
+            eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJSUzI1NiJ9
+            .
+            eyJpc3MiOiJldHNpL1BOT0VFLTMwMzAzMDM5OTE0IiwiX3NkIjpbIlZUZnV0bWtpdUJMWW5Sczl6dzBDZ2s5X0x3b09uSWhWd
+            GZNcXlMUHdSZjAiXSwiX3NkX2FsZyI6InNoYS0yNTYifQ
+            .
+            CA_tlS6sfG6DTx2RWF2_fNizVC8P2fHcitiUQNH5LNIEKfzwtT310rDn635VHSkFiPkYawpd-g6dJQUO6PN229KNA5qtoMi8T
+            a6dc-eCJ9dgHdnSdX-UBkUo4ZPct51dFpoFK_9L3vMpHneT_WRdaXXzMaTrEjD1dIPZ0YAZNY9R_jLYbRYYc-9_YbEtoRdAMCo
+            2kf9znoNfNcX1Tvt2wTJPR1FEqOT54DShTDywGbxX_w6mdFxirr0n9jkiZiDwQyvP7JN7s7x1CD6xsH-DyVh88mtPHLpRH42XC
+            qF_oBQ_BkAF_GoHYR43mk_C0zVg4PNsQ4eMKme3HW2HhyLUtDWOoF3OfiDdRX19ckPUAxh1C0N27g0nHroHYcyogu7cZ_qTaOE
+            3DmTRsymXErSfFXFYrr3CGetxERT6TzGzL-ycKcz-r7nwejhsgny2sgZDvQ0lvSPmiejldsqhkNGQcpnBF6JfX0V5fLLzLdU_c
+            mDBig1TLP-y8ic2xG6F-_Yojs8iL7b3DhEmeOXeqkrAT93pqW_HEbS6dyoY1Oi7xJuj6h3d-QJRgSBrUihf4EnD5XhvFFU8AXF
+            YhRsuyPOWBTtLiV9hvi7TKOUMPwY9EONpNQQiqFS_roMu4vaqLKve00bFDHGT09-dLt4suNA7cStVO-A2IDey9MfQ_bmuQT-6q
+            t02O-nZt4be6R0l0bf7HRlPl-RAThi8lP9qgOFP1ID0oRfK3ralrxGr8e4hjVrJhUSNJ9XAPJBVYdwJtPfee5DckR9HxJ53si3
+            FSPOdtnPsCL8pqCU1nMmdSttLllOEvg5oDtHjgoQGXgrCHU2w284TbZl0i86k910XfA-WcBz8Af9fK_QyoNC8UL01Nqc1ZmF1q
+            j702iRJ6gl__KDmzLh5aPjKec5SFrBXxJJzjUDCU8wLK5EHtKnOUSGb6Uo2TeTgAbtnCuNRwMcmyOMyDomNsJ2QaMPOYeHeCby
+            E3cRhkrIoymNZsSop9gnCz1V9wZR6SvMMLu4ahmfyHD86
+            ~
+            WyJNdVNxMjlKeFEyallWV2k2NTZuV0lBIiwiYXVkIixbeyIuLi4iOiJ4a0JmWFpacmx5N2RQWTB2YmtwbjRoSGZkQnhxQWYtcD
+            B1cDdxUkdIX1drIn0seyIuLi4iOiJiclFTUEhZYnZaOWZzdm1LQ1dZQ2hGVXdtMjhTclo2b3F3S3RYNk1yRXpBIn1dXQ
+            ~
+            WyJxSTJPTFlqRXU4bVlxamt5N1FodUhnIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0My9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNT
+            A2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlXHUwMDNkQUFFQ0F3UUZCZ2N
+            JQ1FvTERBNE5fdyJd
+            ~
+            """.replaceAll("\\s", ""); //remove all whitespace
 
         X509Certificate cert = X509CertUtils.parse(sidDemoCertStr);
         X509Certificate issuerCert = X509CertUtils.parse(TEST_of_EID_SK_2016_PEM);
@@ -198,7 +195,7 @@ class AuthTest {
         assertTrue(verifiedClaims.get("iss").toString().contains(SID_DEMO_IDENTIFIER)); //etsi/PNOEE-30303039914
 
         var expectedAud = List.of("https://localhost:8443"
-            +"/key-shares/ff0102030405060708090a0b0c0e0dff?nonce=AAECAwQFBgcICQoLDA4N_w");
+            + "/key-shares/ff0102030405060708090a0b0c0e0dff?nonce=AAECAwQFBgcICQoLDA4N_w");
 
         assertEquals(expectedAud, verifiedClaims.get("aud"));
     }
@@ -210,12 +207,12 @@ class AuthTest {
 
         assertTrue(verifiedClaims.get("aud") instanceof List);
 
-        List audList = (List)verifiedClaims.get("aud");
+        List audList = (List) verifiedClaims.get("aud");
         assertTrue(audList.size() == 1);
 
         assertTrue(audList.get(0) instanceof String);
 
-        String aud = (String)audList.get(0);
+        String aud = (String) audList.get(0);
 
         assertEquals("https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3"
             + "?nonce=59b314d4815f21f73a0b9168cecbd5773cc694b6", aud);

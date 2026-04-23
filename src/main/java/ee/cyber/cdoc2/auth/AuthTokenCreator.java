@@ -172,7 +172,7 @@ public class AuthTokenCreator {
         JWSHeader header =
             new JWSHeader.Builder(jwsAlgorithm)
                 // signature padding is supported
-                .type(new JOSEObjectType(Constants.TYPE))
+                .type(new JOSEObjectType(Constants.TYPE_AUTH_TOKEN))
                 .build();
 
         // Create a credential JWT. (not signed yet)

@@ -1,7 +1,7 @@
 package ee.cyber.cdoc2.auth.exception;
 
 /**
- * Signals that auth ticket verification has failed
+ * Signals that ticket verification has failed
  */
 public class VerificationException extends Exception {
 
