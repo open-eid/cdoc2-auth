@@ -1,7 +1,5 @@
 package ee.cyber.cdoc2.auth;
 
-import tools.jackson.databind.ObjectMapper;
-
 import java.net.URI;
 import java.security.KeyStore;
 import java.security.PublicKey;
@@ -23,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
 import com.authlete.sd.SDObjectDecoder;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
