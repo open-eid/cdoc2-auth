@@ -30,19 +30,19 @@ public final class SessionTokenDisclosureHelper {
             .filter(disclosure -> "aud".equals(disclosure.getClaimName()))
             .findFirst();
 
-        Optional<Disclosure> toDisclose = disclosures.stream()
+        List<Disclosure> toDisclose = disclosures.stream()
             .filter(disclosure ->
                 disclosure.getClaimName() == null
                     && disclosure.getClaimValue().toString().contains(claimValue))
-            .findFirst();
+            .toList();
 
-        if (audDisclosure.isEmpty() || toDisclose.isEmpty()) {
+        if (audDisclosure.isEmpty() || toDisclose.size() != 1) {
             return null;
         }
 
         SDJWT sdJwtWithFilteredDisclosures = new SDJWT(sdjwt.getCredentialJwt(), List.of(
             audDisclosure.get(),
-            toDisclose.get()
+            toDisclose.getFirst()
         ));
 
         return sdJwtWithFilteredDisclosures.toString();

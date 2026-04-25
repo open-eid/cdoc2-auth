@@ -6,9 +6,7 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
 import java.time.Clock;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
@@ -18,10 +16,7 @@ import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
-import com.authlete.sd.SDObjectDecoder;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -35,15 +30,16 @@ import com.nimbusds.jose.util.X509CertUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-import ee.cyber.cdoc2.auth.SidRpv3SignatureVerifier.SignatureValidationParams;
+import ee.cyber.cdoc2.auth.SidRpv3SignatureVerifier.SessionTokenSignatureValidationParams;
 import ee.cyber.cdoc2.auth.exception.VerificationException;
+
+import static ee.cyber.cdoc2.auth.SidRpv3SignatureVerifier.createSessionTokenValidationParams;
+import static ee.cyber.cdoc2.auth.TokenVerifierUtil.*;
 
 public class SessionTokenVerifier {
     private static final Logger log = LoggerFactory.getLogger(SessionTokenVerifier.class);
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final CertVerifier certVerifier;
-    private final SDObjectDecoder sdObjectDecoder;
     private final Clock clock;
 
     public SessionTokenVerifier(
@@ -52,7 +48,6 @@ public class SessionTokenVerifier {
         Clock clock
     ) {
         this.certVerifier = new CertVerifier(issuersTrustStore, enableRevocationChecks);
-        this.sdObjectDecoder = new SDObjectDecoder();
         this.clock = clock;
     }
 
@@ -68,25 +63,9 @@ public class SessionTokenVerifier {
      * @param certBase64Url  signing certificate in BASE64URL encoding
      * @param jwtPublicKeys  List of JWK public keys that will be filtered for match with kid in
      *                       the JWT header
-     * @return session nonce URI.
+     * @return Response object.
      */
     public TokenVerificationResponse verify(
-        String tokenBase64Url,
-        String certBase64Url,
-        List<JWK> jwtPublicKeys
-    ) throws VerificationException {
-        Map<String, Object> verifiedDecodedClaims = getVerifiedClaims(
-            tokenBase64Url,
-            certBase64Url,
-            jwtPublicKeys
-        );
-        return new TokenVerificationResponse(
-            URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
-            new EtsiIdentifier(verifiedDecodedClaims.get("sub").toString())
-        );
-    }
-
-    private Map<String, Object> getVerifiedClaims(
         String tokenBase64Url,
         String certBase64Url,
         List<JWK> jwtPublicKeys
@@ -121,65 +100,29 @@ public class SessionTokenVerifier {
         JWTClaimsSet claimsSet = getClaimSet(signedJWT);
 
         validateIssuanceAndExpiry(claimsSet);
+        String tokenIdentity = claimsSet.getSubject();
 
-        if (!jwtSubMatchesCert(cert, claimsSet)) {
-            throw new VerificationException("JWT sub does not mach signing certificate");
-        }
+        EtsiIdentifier etsiIdentifier = verifyTokenIdentityAndReturnEtsiIdentifier(
+            cert,
+            tokenIdentity
+        );
 
-        SignatureValidationParams validationParams = createSidSignatureValidationParams(signedJWT);
+        SessionTokenSignatureValidationParams validationParams =
+            createSessionTokenValidationParams(signedJWT);
         PublicKey certPublicKey = cert.getPublicKey();
 
-        if (SidRpv3SignatureVerifier.isValid(null, certPublicKey, validationParams)) {
-            return decodeSdJwtClaims(claimsSet, sdjwt.getDisclosures());
+        if (SidRpv3SignatureVerifier.isValid(certPublicKey, validationParams)) {
+            Map<String, Object> verifiedDecodedClaims = decodeSdJwtClaims(
+                claimsSet,
+                sdjwt.getDisclosures()
+            );
+            return new TokenVerificationResponse(
+                URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
+                etsiIdentifier
+            );
         } else {
             throw new VerificationException("Invalid SID signature");
         }
-    }
-
-    private SignedJWT getSignedJwt(String credentialJwt) throws VerificationException {
-        try {
-            return SignedJWT.parse(credentialJwt);
-        } catch (ParseException e) {
-            throw new VerificationException(e.getMessage());
-        }
-    }
-
-    private JWTClaimsSet getClaimSet(SignedJWT signedJWT) throws VerificationException {
-        try {
-            return signedJWT.getJWTClaimsSet();
-        } catch (ParseException e) {
-            throw new VerificationException(e.getMessage());
-        }
-    }
-
-    private String getSingleAudArrayElementAsString(Map<String, Object> claims)
-        throws VerificationException {
-        Object aud = claims.get("aud");
-        if (aud == null) {
-            throw new VerificationException("aud claim missing in decoded session token");
-        }
-
-        if (aud instanceof ArrayList<?> audArray) {
-            if (audArray.isEmpty()) {
-                throw new VerificationException("disclosed aud array is empty");
-            }
-            if (audArray.size() > 1) {
-                throw new VerificationException("More than one element in disclosed aud array");
-            }
-
-            return audArray.get(0).toString();
-        } else {
-            throw new VerificationException("illegal type for aud claim");
-        }
-    }
-
-    private Map<String, Object> decodeSdJwtClaims(
-        JWTClaimsSet claimsSet,
-        List<Disclosure> disclosures
-    ) {
-        Map<String, Object> claimsMap = claimsSet.getClaims();
-
-        return sdObjectDecoder.decode(claimsMap, disclosures);
     }
 
     private boolean isValidJwtSignature(SignedJWT signedJWT, JWK jwk) throws VerificationException {
@@ -203,16 +146,6 @@ public class SessionTokenVerifier {
         }
     }
 
-    private boolean jwtSubMatchesCert(X509Certificate cert, JWTClaimsSet claimsSet)
-        throws VerificationException {
-        try {
-            EtsiIdentifier etsiIdentifier = new EtsiIdentifier(claimsSet.getClaimAsString("sub"));
-            String certSemanticsIdentifier = SIDCertificateUtil.getSemanticsIdentifier(cert);
-            return certSemanticsIdentifier.equals(etsiIdentifier.getSemanticsIdentifier());
-        } catch (ParseException e) {
-            throw new VerificationException(e.getMessage());
-        }
-    }
 
     private JWSVerifier createJwsVerifierForJwk(JWK jwk) throws VerificationException {
         try {
@@ -231,35 +164,5 @@ public class SessionTokenVerifier {
         }
 
         throw new VerificationException("Unsupported JWK type");
-    }
-
-    private SignatureValidationParams createSidSignatureValidationParams(
-        SignedJWT signedJWT
-    ) throws VerificationException {
-        try {
-            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-
-            SidRpv3SignatureVerifier.SidSignature sidSignature = OBJECT_MAPPER.convertValue(
-                claimsSet.getClaim("signature"),
-                SidRpv3SignatureVerifier.SidSignature.class
-            );
-
-            String rpChallengeBase64 = claimsSet.getClaimAsString("rpChallenge");
-            String interactionsDigestBase64 = claimsSet.getClaimAsString("interactionsDigest");
-            String interactionTypeUsed = claimsSet.getClaimAsString("interactionTypeUsed");
-            String schemeName = claimsSet.getClaimAsString("schemeName");
-            String rpName = claimsSet.getClaimAsString("rpName");
-
-            return new SignatureValidationParams(
-                rpChallengeBase64,
-                interactionsDigestBase64,
-                interactionTypeUsed,
-                schemeName,
-                rpName,
-                sidSignature
-            );
-        } catch (ParseException e) {
-            throw new VerificationException(e.getMessage());
-        }
     }
 }

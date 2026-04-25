@@ -6,11 +6,16 @@
 
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
-    <version>0.4.0</version>
+    <version>0.5.0</version>
     <packaging>jar</packaging>
     <description>
-        CDOC2 auth token library, generates/validates
-        authentication tickets used to access `cdoc2-shares-server` `GET /key-shares/{shareID}` endpoint
+        CDOC2 auth token library, generates/validates session and authentication tokens.
+        Authentication tokens are used to access `cdoc2-shares-server` `GET /key-shares/{shareID}`
+        endpoint.
+        Session tokens are used to access `cdoc2-shares-server` endpoints `GET /key-shares/{shareID}`,
+        `POST '/key-shares/{shareId}/nonce'`,
+        and `cdoc2-rp-server` endpoints `POST '/sid/authenticate', `GET '/sid/session/{sessionID}',
+        `POST '/mid/authenticate', `GET '/mid/session/{sessionID}'
     </description>
 
     <properties>
