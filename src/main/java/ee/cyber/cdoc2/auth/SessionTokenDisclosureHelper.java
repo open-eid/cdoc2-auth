@@ -42,7 +42,7 @@ public final class SessionTokenDisclosureHelper {
 
         SDJWT sdJwtWithFilteredDisclosures = new SDJWT(sdjwt.getCredentialJwt(), List.of(
             audDisclosure.get(),
-            toDisclose.getFirst()
+            toDisclose.get(0)
         ));
 
         return sdJwtWithFilteredDisclosures.toString();
