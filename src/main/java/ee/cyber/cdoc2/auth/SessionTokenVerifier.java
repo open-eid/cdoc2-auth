@@ -111,18 +111,17 @@ public class SessionTokenVerifier {
             createSessionTokenValidationParams(signedJWT);
         PublicKey certPublicKey = cert.getPublicKey();
 
-        if (SidRpv3SignatureVerifier.isValid(certPublicKey, validationParams)) {
-            Map<String, Object> verifiedDecodedClaims = decodeSdJwtClaims(
-                claimsSet,
-                sdjwt.getDisclosures()
-            );
-            return new TokenVerificationResponse(
-                URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
-                etsiIdentifier
-            );
-        } else {
-            throw new VerificationException("Invalid SID signature");
-        }
+        SidRpv3SignatureVerifier.verify(certPublicKey, validationParams);
+
+        Map<String, Object> verifiedDecodedClaims = decodeSdJwtClaims(
+            claimsSet,
+            sdjwt.getDisclosures()
+        );
+
+        return new TokenVerificationResponse(
+            URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
+            etsiIdentifier
+        );
     }
 
     private boolean isValidJwtSignature(SignedJWT signedJWT, JWK jwk) throws VerificationException {

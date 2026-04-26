@@ -19,19 +19,19 @@ import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-public final class SidRpv3SignatureVerifier {
+final class SidRpv3SignatureVerifier {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private SidRpv3SignatureVerifier() {
         // utility class
     }
 
-    public static boolean isValid(
+    static void verify(
         PublicKey publicKey,
         SessionTokenSignatureValidationParams params
     ) throws VerificationException {
         try {
-            return validate(
+            verify(
                 Base64.getDecoder().decode(params.signature.value),
                 publicKey,
                 TokenSignatureValidationParams.fromSessionTokenValidationParams(params)
@@ -42,7 +42,7 @@ public final class SidRpv3SignatureVerifier {
         }
     }
 
-    public static boolean isValid(
+    static void verify(
         String signatureValueBase64Url,
         PublicKey publicKey,
         AuthTokenSignatureValidationParams params,
@@ -51,7 +51,7 @@ public final class SidRpv3SignatureVerifier {
         String rpChallenge
     ) throws VerificationException {
         try {
-            return validate(Base64.getUrlDecoder().decode(signatureValueBase64Url),
+            verify(Base64.getUrlDecoder().decode(signatureValueBase64Url),
                 publicKey,
                 TokenSignatureValidationParams.fromAuthTokenValidationParams(
                     params,
@@ -66,12 +66,12 @@ public final class SidRpv3SignatureVerifier {
         }
     }
 
-    private static boolean validate(
+    private static void verify(
         byte[] signatureBytes,
         PublicKey publicKey,
         TokenSignatureValidationParams params
     ) throws InvalidAlgorithmParameterException, InvalidKeyException,
-        SignatureException, NoSuchAlgorithmException {
+        SignatureException, NoSuchAlgorithmException, VerificationException {
 
         String separator = "|";
         String schemeName = params.schemeName;
@@ -108,7 +108,11 @@ public final class SidRpv3SignatureVerifier {
         verifier.initVerify(publicKey);
         verifier.update(acspV2PayloadBytes);
 
-        return verifier.verify(signatureBytes);
+        if (verifier.verify(signatureBytes)) {
+            return;
+        };
+
+        throw new VerificationException("SID RpV3 signature verification failure");
     }
 
     private static PSSParameterSpec getPssParameterSpec(TokenSignatureValidationParams params) {

@@ -10,9 +10,9 @@ import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-public final class MidSignatureVerifier {
+final class MidSignatureVerifier {
 
-    static boolean isValid(
+    static void verify(
         SignedJWT signedJWT,
         X509Certificate cert
     )
@@ -27,10 +27,14 @@ public final class MidSignatureVerifier {
                 .build();
 
             JWSVerifier jwsVerifier = createECVerifier(jwk);
-            return signedJWT.verify(jwsVerifier);
+            if(signedJWT.verify(jwsVerifier)) {
+                return;
+            };
         } catch (JOSEException e) {
             throw new VerificationException(e.getMessage());
         }
+
+        throw new VerificationException("MID signature verification failure");
     }
 
     private static JWSVerifier createECVerifier(ECKey pubECKey)

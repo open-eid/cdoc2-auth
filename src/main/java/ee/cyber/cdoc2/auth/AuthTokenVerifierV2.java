@@ -94,22 +94,19 @@ public class AuthTokenVerifierV2 {
             SidRpv3SignatureVerifier.AuthTokenSignatureValidationParams validationParams =
                 SidRpv3SignatureVerifier.createAuthTokenValidationParams(sidSignatureParamsJsonBase64Url);
 
-            if (SidRpv3SignatureVerifier.isValid(
+            SidRpv3SignatureVerifier.verify(
                 signedJWT.getSignature().toString(),
                 cert.getPublicKey(),
                 validationParams,
                 rpName,
                 schemeName,
                 createRpChallenge(signedJWT)
-            )) {
-                return createResponse(claimsSet, sdjwt, etsiIdentifier);
-            }
-
-        } else if (MidSignatureVerifier.isValid(signedJWT, cert)) {
-            return createResponse(claimsSet, sdjwt, etsiIdentifier);
+            );
+        } else {
+            MidSignatureVerifier.verify(signedJWT, cert);
         }
 
-        throw new VerificationException("Auth token signature verification failed");
+        return createResponse(claimsSet, sdjwt, etsiIdentifier);
     }
 
     private TokenVerificationResponse createResponse(
