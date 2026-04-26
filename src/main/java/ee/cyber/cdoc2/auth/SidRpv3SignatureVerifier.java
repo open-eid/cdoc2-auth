@@ -19,7 +19,7 @@ import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-final class SidRpv3SignatureVerifier {
+public final class SidRpv3SignatureVerifier {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private SidRpv3SignatureVerifier() {
