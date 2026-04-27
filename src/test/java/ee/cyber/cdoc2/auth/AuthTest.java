@@ -14,6 +14,7 @@ import com.nimbusds.jose.util.X509CertUtils;
 import static ee.cyber.cdoc2.auth.TestData.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+//TODO Equivalent tests for AuthTokenVerifierV2 and SID RPv3 signatures
 class AuthTest {
 
     static Logger log = LoggerFactory.getLogger(AuthTest.class);
