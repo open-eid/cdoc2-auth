@@ -37,6 +37,10 @@ class SdJwtWrapper {
         return reconstructSdJwt(headerReplaced, payloadReplace);
     }
 
+    String getSdJwt() {
+        return reconstructSdJwt(this.headerJson, this.payloadJson);
+    }
+
     private String reconstructSdJwt(String header, String payload) {
         return Base64.getUrlEncoder().withoutPadding().encodeToString(
             header.getBytes(StandardCharsets.UTF_8)
