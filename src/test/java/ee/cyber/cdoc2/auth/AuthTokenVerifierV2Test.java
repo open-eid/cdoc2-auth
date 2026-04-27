@@ -115,14 +115,9 @@ class AuthTokenVerifierV2Test {
 
     @Test
     void verifyTokenFailWhenIssDoesNotMatchCertificate() {
-        String filteredToken = SessionTokenDisclosureHelper.discloseAudByClaimValue(
-            AUTH_TOKEN.replaceValue("iss", "etsi/PNOEE-40504040999"),
-            AUTH_NONCE_URI_PATH
-        );
-
         VerificationException exception = assertThrows(VerificationException.class,
             () -> defaultAuthTokenVerifier.verify(
-                filteredToken,
+                AUTH_TOKEN.replaceValue("iss", "etsi/PNOEE-40504040999"),
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 SIGNATURE_VALIDATION_PARAMS_BASE64URL,
                 "DEMO",
@@ -137,14 +132,9 @@ class AuthTokenVerifierV2Test {
 
     @Test
     void verifyTokenFailWhenIssDoesNotStartWithEtsi() {
-        String filteredToken = SessionTokenDisclosureHelper.discloseAudByClaimValue(
-            AUTH_TOKEN.replaceValue("iss", "PNOEE-40504040001"),
-            AUTH_NONCE_URI_PATH
-        );
-
         VerificationException exception = assertThrows(VerificationException.class,
             () -> defaultAuthTokenVerifier.verify(
-                filteredToken,
+                AUTH_TOKEN.replaceValue("iss", "PNOEE-40504040001"),
                 SID_SIGNING_CERTIFICATE_BASE64URL,
                 SIGNATURE_VALIDATION_PARAMS_BASE64URL,
                 "DEMO",
