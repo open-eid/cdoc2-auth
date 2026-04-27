@@ -17,7 +17,7 @@ import static ee.cyber.cdoc2.auth.TestData.ISSUING_CERT_EID_Q_2024E;
 import static ee.cyber.cdoc2.auth.TestData.ROOT_CERT_G1E;
 import static org.junit.jupiter.api.Assertions.*;
 
-class AuthTokenVerifierV2Test {
+class AuthTokenVerifierTest {
     private static final String AUTH_NONCE_URI_PATH = "/key-shares/ff0102030405060708090a0b0c0e0dff";
     private static final String AUTH_TOKEN_WITH_FILTERED_DISCLOSURES_BASE64URL =
         "eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJSU0FTU0EtUFNTK0FDU1BfVjIifQ.eyJpc3MiOiJldHNpL1BOT0VFLTQwNTA0MDQwMDAxIiwiX3NkIjpbIlhWTzlYZ1hhYmRqa3h1aUZNQTAxMmtUSEg1WURCX0gyWXlpU21ZWklJbXciXSwiX3NkX2FsZyI6InNoYS0yNTYifQ.ZGvyeET3GFN4cFLWRAhgG4JParjJEjv3LCIZyEnV6FpKFxBL7XzDlNysqtdGF3NZaXa5iXnWP8WOMAhDtCLOo2iwIJBfovnKLl5yFgKzoxjZfOB4tFiRkL24DKWdYYCCMIjKSPwfoB_A_IKBKy1xJwH6pUtbc0Zg1LZaOXGMJ_evI4pY3Vrc2VNZV7ej57t5Rz5CY8FCTZfgCHFJ_-upc02w4mjUmwYVTiIZdJMazVusaK9cuzUfo2UjlyBIz7Lj3LvJV_e1mJsm4lX1Swk71JNnxy60WTuT_iTMlG6kp8hFpai0jSVWJG3H1K6tCXU3B0Xh9mphaGWWeE1fYcAzL9PG64pgsch8ej6_YEH8GStulC9GJ_pr1tXID3sW5msYEgu8J3FVb0mIbRiWh8-xZ3oFs8LYP31N6vzlyXLc696euz8Ea1wZjgmB6ivxa9SV5JP5hu4UtqipY-lQPC3Czvzij31sZQW1gMWfSh0cGviQyoVNKtkWOugevCWfNAEVBc6_at-K8xSKBiVQ8evvHp7iyqYaQBQZ3p6F6k_rwnaVULF7Su5_OTnkHfwmJtwXl1-ODZXzp0yi4MVwP_odA72yG1FSZ4qjI3W28PGcl6_hMGeepUC8_-_9Bj1PG9XaaQMk4_scjLWwWi1yzTT4VLUcSl-ApGJMNlJQNb2xc7vpXFaSf7NHlp9Fp8ToOkpfl1rXayM4HzuUxE-_sYjWQhYHPV9lo7oOe8sWUS2BKkbu8M2jdDiN9c3sHDb9TtnADONvapy1CoqoJTZbfFJvkxmaZtSJxPDWztTDQud0WPuziEV_LtlzweJCvfJKnKXAe_a6WtDwDA1wo6-JFK-PM6SyFI7wWytwGlEzgvJlPuqDSfautqFjC07whudkqDQpxDv4aPsoFnHeTzHxKdf-TuZwTKNXxJCoPZK1uo1Yj2nx2wZbCTm-Bfmxq5vKDB4wN-OK2tvk5WZByR1Q-sRMpIEO1ijglRf3KT3ig5jHb6e1W1P4eJcN8AZjrZz1fI3N~WyJQMWZ6M0pkaFRoWG5Eb2pkaDlqVnV3IiwiYXVkIixbeyIuLi4iOiJoYy03cGpsYlBwb0w2bjJIemx2bVVJMlU2dEZIUU1EWUJneHAxNlVFUjdJIn0seyIuLi4iOiJFTy11UG1HYUEzLTRfT1RpdjBJUlNqTy0tc1F1NVU0T2lTMWJjaEdYbGs0In1dXQ~WyJ2R2hHSTlabl9BWVk4bVBfamJuV21nIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mi9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNTA2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlPUFBRUNBd1FGQmdjSUNRb0xEQTROX3ciXQ~";
@@ -51,11 +51,11 @@ class AuthTokenVerifierV2Test {
             }
             """.getBytes(StandardCharsets.UTF_8));
 
-    private AuthTokenVerifierV2 defaultAuthTokenVerifier;
+    private AuthTokenVerifier defaultAuthTokenVerifier;
 
     @BeforeEach
     void setUp() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        defaultAuthTokenVerifier = new AuthTokenVerifierV2(
+        defaultAuthTokenVerifier = new AuthTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(
                 ROOT_CERT_G1E,
                 ISSUING_CERT_EID_Q_2024E

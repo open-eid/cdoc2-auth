@@ -53,8 +53,8 @@ public class SessionTokenVerifier {
 
     /**
      * Verifies: JWT signature with provided jwk, certificate chain, JWT sub match with
-     * certificate subject, issuance time not in the future, expiry time not in the past,
-     * SID signature included with token.
+     * certificate subject, issuance time not in the future, expiry time not in the past, correct
+     * typ, SID signature included with token.
      * Disclosed aud array must have exactly one element.
      * On successful verification returns a response object containing: a single session nonce
      * URI, ETSI identifier parsed from the token 'sub' claim.
