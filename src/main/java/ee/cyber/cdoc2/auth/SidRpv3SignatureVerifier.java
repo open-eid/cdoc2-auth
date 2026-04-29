@@ -9,43 +9,69 @@ import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+import java.text.ParseException;
 import java.util.Base64;
-import java.util.Objects;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-
 public final class SidRpv3SignatureVerifier {
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private SidRpv3SignatureVerifier() {
         // utility class
     }
 
-    public static boolean isValid(
-        String signatureValueBase64Url,
+    static void verify(
         PublicKey publicKey,
-        SignatureValidationParams params
+        SessionTokenSignatureValidationParams params
     ) throws VerificationException {
-        Objects.requireNonNull(params);
-        Objects.requireNonNull(params.sidSignature);
-
-        byte[] signatureToValidate = signatureValueBase64Url != null
-            ? Base64.getUrlDecoder().decode(signatureValueBase64Url)
-            : Base64.getDecoder().decode(params.sidSignature.value);
-
         try {
-            return validate(signatureToValidate, publicKey, params);
+            verify(
+                Base64.getDecoder().decode(params.signature.value),
+                publicKey,
+                TokenSignatureValidationParams.fromSessionTokenValidationParams(params)
+            );
         } catch (InvalidAlgorithmParameterException | InvalidKeyException | SignatureException |
                  NoSuchAlgorithmException e) {
             throw new VerificationException(e.getMessage());
         }
     }
 
-    private static boolean validate(
+    static void verify(
+        String signatureValueBase64Url,
+        PublicKey publicKey,
+        AuthTokenSignatureValidationParams params,
+        String rpName,
+        String schemeName,
+        String rpChallenge
+    ) throws VerificationException {
+        try {
+            verify(Base64.getUrlDecoder().decode(signatureValueBase64Url),
+                publicKey,
+                TokenSignatureValidationParams.fromAuthTokenValidationParams(
+                    params,
+                    rpName,
+                    schemeName,
+                    rpChallenge
+                )
+            );
+        } catch (InvalidAlgorithmParameterException | InvalidKeyException | SignatureException |
+                 NoSuchAlgorithmException e) {
+            throw new VerificationException(e.getMessage());
+        }
+    }
+
+    private static void verify(
         byte[] signatureBytes,
         PublicKey publicKey,
-        SignatureValidationParams params
+        TokenSignatureValidationParams params
     ) throws InvalidAlgorithmParameterException, InvalidKeyException,
-        SignatureException, NoSuchAlgorithmException {
+        SignatureException, NoSuchAlgorithmException, VerificationException {
 
         String separator = "|";
         String schemeName = params.schemeName;
@@ -54,14 +80,14 @@ public final class SidRpv3SignatureVerifier {
             .encodeToString(params.rpName.getBytes(StandardCharsets.UTF_8));
         String brokeredRpNameBase64 = "";
         String initialCallbackUrl = "";
-        String flowType = params.sidSignature.flowType;
+        String flowType = params.signatureParams.flowType;
 
         String[] payloadParts = {
             schemeName,
             signatureProtocol,
-            params.sidSignature.serverRandom,
+            params.signatureParams.serverRandom,
             params.rpChallenge,
-            params.sidSignature.userChallenge,
+            params.signatureParams.userChallenge,
             relyingPartyNameBase64,
             brokeredRpNameBase64,
             params.interactionsDigest,
@@ -73,40 +99,131 @@ public final class SidRpv3SignatureVerifier {
         String acspV2Payload = String.join(separator, payloadParts);
         byte[] acspV2PayloadBytes = acspV2Payload.getBytes(StandardCharsets.UTF_8);
 
-        String maskGenDigestAlg =
-            params.sidSignature.signatureAlgorithmParameters().maskGenAlgorithm()
-                .parameters().hashAlgorithm();
-
-        PSSParameterSpec pssSpec = new PSSParameterSpec(
-            params.sidSignature.signatureAlgorithmParameters().hashAlgorithm(),
-            "MGF1",
-            new MGF1ParameterSpec(maskGenDigestAlg),
-            params.sidSignature.signatureAlgorithmParameters().saltLength(),
-            PSSParameterSpec.TRAILER_FIELD_BC
-        );
+        PSSParameterSpec pssSpec = getPssParameterSpec(params);
 
         Signature verifier = Signature.getInstance(
-            params.sidSignature.signatureAlgorithm()
+            params.signatureParams.signatureAlgorithm()
         );
         verifier.setParameter(pssSpec);
         verifier.initVerify(publicKey);
         verifier.update(acspV2PayloadBytes);
 
-        return verifier.verify(signatureBytes);
+        if (verifier.verify(signatureBytes)) {
+            return;
+        };
+
+        throw new VerificationException("SID RpV3 signature verification failure");
     }
 
-    public record SignatureValidationParams(
+    private static PSSParameterSpec getPssParameterSpec(TokenSignatureValidationParams params) {
+        SignatureAlgorithmParameters signatureAlgorithmParams =
+            params.signatureParams.signatureAlgorithmParameters;
+
+        String maskGenDigestAlg =
+            signatureAlgorithmParams.maskGenAlgorithm()
+                .parameters().hashAlgorithm();
+
+        return new PSSParameterSpec(
+            signatureAlgorithmParams.hashAlgorithm(),
+            "MGF1",
+            new MGF1ParameterSpec(maskGenDigestAlg),
+            signatureAlgorithmParams.saltLength(),
+            PSSParameterSpec.TRAILER_FIELD_BC
+        );
+    }
+
+    static SessionTokenSignatureValidationParams createSessionTokenValidationParams(
+        SignedJWT signedJWT
+    ) throws VerificationException {
+        try {
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+
+            SidRpv3SignatureVerifier.SidSignature sidSignature = OBJECT_MAPPER.convertValue(
+                claimsSet.getClaim("signature"),
+                SidRpv3SignatureVerifier.SidSignature.class
+            );
+
+            String rpChallengeBase64 = claimsSet.getClaimAsString("rpChallenge");
+            String interactionsDigestBase64 = claimsSet.getClaimAsString("interactionsDigest");
+            String interactionTypeUsed = claimsSet.getClaimAsString("interactionTypeUsed");
+            String schemeName = claimsSet.getClaimAsString("schemeName");
+            String rpName = claimsSet.getClaimAsString("rpName");
+
+            return new SessionTokenSignatureValidationParams(
+                rpChallengeBase64,
+                interactionsDigestBase64,
+                interactionTypeUsed,
+                schemeName,
+                rpName,
+                sidSignature
+            );
+        } catch (ParseException e) {
+            throw new VerificationException(e.getMessage());
+        }
+    }
+
+    static SessionTokenSignatureValidationParams createSessionTokenValidationParams(
+        String signatureValidationParamsJsonBase64Url
+    ) throws VerificationException {
+        String signatureValidationParamsJson = new String(
+            Base64.getUrlDecoder().decode(signatureValidationParamsJsonBase64Url),
+            StandardCharsets.UTF_8);
+
+        try {
+            return OBJECT_MAPPER.readValue(
+                signatureValidationParamsJson,
+                SessionTokenSignatureValidationParams.class
+            );
+        } catch (JsonProcessingException e) {
+            throw new VerificationException(e.getMessage());
+        }
+    }
+
+    public static AuthTokenSignatureValidationParams createAuthTokenValidationParams(
+        String signatureValidationParamsJsonBase64Url
+    ) throws VerificationException {
+        String signatureValidationParamsJson = new String(
+            Base64.getUrlDecoder().decode(signatureValidationParamsJsonBase64Url),
+            StandardCharsets.UTF_8);
+
+        try {
+            return OBJECT_MAPPER.readValue(
+                signatureValidationParamsJson,
+                AuthTokenSignatureValidationParams.class
+            );
+        } catch (JsonProcessingException e) {
+            throw new VerificationException(e.getMessage());
+        }
+    }
+
+    public record SessionTokenSignatureValidationParams(
         String rpChallenge,
         String interactionsDigest,
         String interactionTypeUsed,
         String schemeName,
         String rpName,
-        SidSignature sidSignature
+        SidSignature signature
     ) {
     }
 
     public record SidSignature(
         String value,
+        String serverRandom,
+        String userChallenge,
+        String signatureAlgorithm,
+        String flowType,
+        SignatureAlgorithmParameters signatureAlgorithmParameters
+    ) {
+    }
+
+    public record AuthTokenSignatureValidationParams(
+        String interactionsDigest,
+        String interactionTypeUsed,
+        SidSignatureParams signature
+    ) {
+    }
+
+    public record SidSignatureParams(
         String serverRandom,
         String userChallenge,
         String signatureAlgorithm,
@@ -134,4 +251,43 @@ public final class SidRpv3SignatureVerifier {
         }
     }
 
+    private record TokenSignatureValidationParams(
+        String rpChallenge,
+        String interactionsDigest,
+        String interactionTypeUsed,
+        String schemeName,
+        String rpName,
+        SidSignatureParams signatureParams
+    ) {
+        static TokenSignatureValidationParams fromSessionTokenValidationParams(
+            SessionTokenSignatureValidationParams params) {
+            return new TokenSignatureValidationParams(
+                params.rpChallenge,
+                params.interactionsDigest,
+                params.interactionTypeUsed,
+                params.schemeName,
+                params.rpName,
+                new SidSignatureParams(
+                    params.signature.serverRandom,
+                    params.signature.userChallenge,
+                    params.signature.signatureAlgorithm,
+                    params.signature.flowType,
+                    params.signature.signatureAlgorithmParameters
+                )
+            );
+        }
+
+        static TokenSignatureValidationParams fromAuthTokenValidationParams(
+            AuthTokenSignatureValidationParams params, String rpName, String schemeName,
+            String rpChallenge) {
+            return new TokenSignatureValidationParams(
+                rpChallenge,
+                params.interactionsDigest,
+                params.interactionTypeUsed,
+                schemeName,
+                rpName,
+                params.signature
+            );
+        }
+    }
 }

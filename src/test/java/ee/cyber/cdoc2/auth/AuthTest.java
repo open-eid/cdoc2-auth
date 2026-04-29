@@ -14,6 +14,7 @@ import com.nimbusds.jose.util.X509CertUtils;
 import static ee.cyber.cdoc2.auth.TestData.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+//TODO Equivalent tests for AuthTokenVerifierV2 and SID RPv3 signatures
 class AuthTest {
 
     static Logger log = LoggerFactory.getLogger(AuthTest.class);
@@ -112,7 +113,7 @@ class AuthTest {
 
         log.debug("SDJWT 0: {}", sdjwt0);
 
-        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
+        AuthTokenVerifierOld tokenVerifier = new AuthTokenVerifierOld(
             TestData.createTestIssuerTrustStore(List.of(TEST_RSA_CERT_ISSUER_PEM)), false
         );
         Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
@@ -136,7 +137,7 @@ class AuthTest {
 
         log.debug("SDJWT 0: {}", sdjwt0);
 
-        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(
+        AuthTokenVerifierOld tokenVerifier = new AuthTokenVerifierOld(
             TestData.createTestIssuerTrustStore(List.of(TEST_ECDSA_CERT_ISSUER_PEM)), false
         );
         Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(
@@ -186,7 +187,7 @@ class AuthTest {
         test_Of_EID_SK_2016.setCertificateEntry("test_Of_EID_SK_2016", issuerCert);
 
 
-        AuthTokenVerifier tokenVerifier = new AuthTokenVerifier(test_Of_EID_SK_2016, false);
+        AuthTokenVerifierOld tokenVerifier = new AuthTokenVerifierOld(test_Of_EID_SK_2016, false);
         Map<String, Object> verifiedClaims = tokenVerifier.getVerifiedClaims(token1, cert);
 
         log.debug("claims: {}", verifiedClaims);

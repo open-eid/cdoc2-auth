@@ -1,247 +1,140 @@
 package ee.cyber.cdoc2.auth;
 
+import java.net.URI;
 import java.security.KeyStore;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.List;
+import java.util.Base64;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.authlete.sd.Disclosure;
 import com.authlete.sd.SDJWT;
-import com.authlete.sd.SDObjectDecoder;
-import com.nimbusds.jose.JOSEException;
-import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
-import com.nimbusds.jose.JWSVerifier;
-import com.nimbusds.jose.crypto.ECDSAVerifier;
-import com.nimbusds.jose.crypto.RSASSAVerifier;
-import com.nimbusds.jose.crypto.impl.ECDSAProvider;
-import com.nimbusds.jose.crypto.impl.RSASSAProvider;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.RSAKey;
+import com.nimbusds.jose.util.X509CertUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
-import ee.cyber.cdoc2.auth.exception.IllegalCertificateException;
-import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdenfierException;
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-/**
- * Class to validate cdoc2 auth tokens, created by {@link AuthTokenCreator}
- * Validated data has the following structure:
- * {@link AuthTokenVerifier#getVerifiedClaimsForRSA(String, RSAKey)} or
- * {@link AuthTokenVerifier#getVerifiedClaimsForEC(String, ECKey)}:
- */
-public class AuthTokenVerifier {
+import static ee.cyber.cdoc2.auth.Constants.RP_V3_SIGNATURE_ALGORITHM_NAME;
+import static ee.cyber.cdoc2.auth.TokenVerifierUtil.*;
 
+public class AuthTokenVerifier {
     private static final Logger log = LoggerFactory.getLogger(AuthTokenVerifier.class);
-    private static final Logger tokens_log = LoggerFactory.getLogger("tokens");
 
     private final CertVerifier certVerifier;
 
-    public AuthTokenVerifier(KeyStore issuersTrustStore, boolean enableRevocationChecks) {
+    public AuthTokenVerifier(
+        KeyStore issuersTrustStore,
+        boolean enableRevocationChecks
+    ) {
         this.certVerifier = new CertVerifier(issuersTrustStore, enableRevocationChecks);
     }
 
     /**
-     * Verify JWT signature and validate signing certificate.
-     * Check that JWT "iss" matches certificate subjectname
-     * Disclose data from sd-jwt disclosures.
+     * Verifies: JWT signature, using the additional provided signature parameters for SID RPv3
+     * signatures, certificate chain, JWT iss match with certificate subject, correct typ, token
+     * identity format.
+     * Disclosed aud array must have exactly one element.
+     * On successful verification returns a response object containing: a single auth nonce
+     * URI, ETSI identifier parsed from the token 'iss' claim.
      *
-     * @param token sd-jwt created by {@link AuthTokenCreator}
-     * @param cert  certificate to verify token signature with
-     * @return verified/disclosed claims as JsonObject
-     * @throws VerificationException when token doesn't verify or missing/unsupported data
-     * @throws ParseException        If the string couldn't be parsed to a valid signed JWT.
-     * @throws JOSEException         if signed JWT verification has failed
+     * @param tokenBase64Url                  session token in BASE64URL encoding
+     * @param certBase64Url                   signing certificate in BASE64URL encoding
+     * @param sidSignatureParamsJsonBase64Url parameters for SID RpV3 signature verification.
+     *                                        {@code null} when veryfying MID signature.
+     * @param rpName                          Relying party name for SID RpV3 signature
+     *                                        verification. {@code null} when veryfying MID
+     *                                        signature.
+     * @param schemeName                      Scheme name for SID RpV3 signature verification.
+     *                                        {@code null} when veryfying MID signature.
+     * @return Response object
+     * @throws VerificationException
      */
-    public Map<String, Object> getVerifiedClaims(
-        String token,
-        X509Certificate cert
-    ) throws VerificationException, JOSEException, ParseException {
+    public TokenVerificationResponse verify(
+        String tokenBase64Url,
+        String certBase64Url,
+        String sidSignatureParamsJsonBase64Url,
+        String rpName,
+        String schemeName
+    ) throws VerificationException {
+        Objects.requireNonNull(tokenBase64Url);
+        Objects.requireNonNull(certBase64Url);
 
-        Objects.requireNonNull(token);
-        Objects.requireNonNull(cert);
+        X509Certificate cert = X509CertUtils.parse(Base64.getUrlDecoder().decode(certBase64Url));
 
-        //check that certificate is issued by a valid issuer
-        this.certVerifier.checkCertificate(cert);
+        certVerifier.checkCertificate(cert);
 
-        try {
-            return getVerifiedClaimsByKeyAlgorithm(token, cert);
-        } catch (IllegalCertificateException ex) {
-            throw new VerificationException("Failed to extract keyID from certificate", ex);
-        }
-    }
-
-    private Map<String, Object> getVerifiedClaimsByKeyAlgorithm(
-        String token,
-        X509Certificate cert
-    ) throws VerificationException, JOSEException, ParseException {
-        String publicKeyAlgorithm = cert.getPublicKey().getAlgorithm();
-        if ("RSA".equals(publicKeyAlgorithm)) {
-            return getVerifiedClaimsUsingRSACert(cert, token);
-        } else if ("EC".equals(publicKeyAlgorithm)) {
-            return getVerifiedClaimsUsingECDSACert(cert, token);
-        } else {
-            throw new VerificationException(
-                "Expected certificate public key to be RSA or EC algorithm"
-            );
-        }
-    }
-
-    private Map<String, Object> getVerifiedClaimsUsingRSACert(X509Certificate cert, String token)
-        throws VerificationException, ParseException, JOSEException {
-        //For Smart-ID this is in format PNOEE-30303039914
-        String subjectSerial = SIDCertificateUtil.getSemanticsIdentifier(cert);
-        RSAKey jwk = new RSAKey.Builder((RSAPublicKey) cert.getPublicKey())
-            .keyID(subjectSerial)
-            .build();
-
-        return getVerifiedClaimsForRSA(token, jwk);
-    }
-
-    private Map<String, Object> getVerifiedClaimsUsingECDSACert(X509Certificate cert, String token)
-        throws VerificationException, ParseException, JOSEException {
-
-        //For Mobile-ID this is in format PNOEE-30303039914
-        String subjectSerial = SIDCertificateUtil.getSemanticsIdentifier(cert);
-
-        // parse ECKey from cert (determining EC curve is a bit tricky) and then set keyID
-        ECKey jwk = new ECKey.Builder(ECKey.parse(cert))
-            .keyID(subjectSerial)
-            .build();
-
-        return getVerifiedClaimsForEC(token, jwk);
-    }
-
-    private static Map<String, Object> getVerifiedClaimsForRSA(String token, RSAKey pubRSAjwk)
-        throws VerificationException, JOSEException, ParseException {
-        JWSVerifier jwsVerifier = createRSAVerifier(pubRSAjwk);
-        return getVerifiedClaims(token, pubRSAjwk.getKeyID(), jwsVerifier, RSASSAProvider.SUPPORTED_ALGORITHMS);
-    }
-
-    private static Map<String, Object> getVerifiedClaimsForEC(String token, ECKey pubECJwk)
-        throws VerificationException, ParseException, JOSEException {
-        JWSVerifier jwsVerifier = createECVerifier(pubECJwk);
-        return getVerifiedClaims(token, pubECJwk.getKeyID(), jwsVerifier, ECDSAProvider.SUPPORTED_ALGORITHMS);
-    }
-
-    private static JWSVerifier createRSAVerifier(RSAKey pubRSAJwk)
-        throws JOSEException, VerificationException {
-        if (pubRSAJwk.getKeyID() == null) {
-            throw new VerificationException("Expected kid for pubRSAJwk");
-        }
-
-        return new RSASSAVerifier(pubRSAJwk);
-    }
-
-    private static JWSVerifier createECVerifier(ECKey pubECKey)
-        throws JOSEException, VerificationException {
-        if (pubECKey.getKeyID() == null) {
-            throw new VerificationException("Expected kid for pubECJwk");
-        }
-        return new ECDSAVerifier(pubECKey);
-    }
-
-    /**
-     * Verify token with pubRSAJWK and return verified claims from the token
-     *
-     * @param token                token to verify
-     * @param pubKeyId             public jwk kid for token verification
-     * @param jwsVerifier          JWS verifier
-     * @param allowedKeyAlgorithms JWS algorithms that are allowed
-     * @return verified claims JsonObject as Map
-     * @throws VerificationException if verification of token fails
-     * @throws JOSEException         if signed JWT verification has failed
-     * @throws ParseException        If the string couldn't be parsed to a valid signed JWT
-     */
-    private static Map<String, Object> getVerifiedClaims(
-        String token,
-        String pubKeyId,
-        JWSVerifier jwsVerifier,
-        Set<JWSAlgorithm> allowedKeyAlgorithms
-    ) throws VerificationException, JOSEException, ParseException {
-
-        SDJWT sdJwt = SDJWT.parse(token);
-
-        String jwt = sdJwt.getCredentialJwt();
-        SignedJWT signedJWT = SignedJWT.parse(jwt);
+        SDJWT sdjwt = SDJWT.parse(tokenBase64Url);
+        SignedJWT signedJWT = getSignedJwt(sdjwt.getCredentialJwt());
         JWSHeader header = signedJWT.getHeader();
 
-        if (!allowedKeyAlgorithms.contains(header.getAlgorithm())) {
-            throw new VerificationException("Algorithm not supported: " + header.getAlgorithm());
-        }
-
-        if (header.getType() == null ||
-            !Constants.TYPE_AUTH_TOKEN.equals(signedJWT.getHeader().getType().toString())
-        ) {
+        if (!Constants.TYPE_AUTH_TOKEN.equals(header.getType().toString())) {
             throw new VerificationException("Unsupported \"typ\" " + header.getType());
         }
 
-        boolean signatureValid = signedJWT.verify(jwsVerifier);
-        if (!signatureValid) {
-            throw new VerificationException("JWT signature verification failed");
+        JWTClaimsSet claimsSet = getClaimSet(signedJWT);
+        String tokenIdentity = claimsSet.getIssuer();
+
+        if (!tokenIdentity.startsWith(EtsiIdentifier.PREFIX)) {
+            throw new VerificationException("Only identifiers starting with " + EtsiIdentifier.PREFIX
+                + " are supported.  \"iss\" \"" + tokenIdentity + "\"");
         }
 
-        JWTClaimsSet signedClaims = signedJWT.getJWTClaimsSet();
-        Map<String, Object> signedClaimsMap = signedClaims.getClaims();
+        EtsiIdentifier etsiIdentifier = verifyTokenIdentityAndReturnEtsiIdentifier(
+            cert,
+            tokenIdentity
+        );
 
+        if (sidSignatureParamsJsonBase64Url != null) {
+            if (!RP_V3_SIGNATURE_ALGORITHM_NAME.equals(header.getAlgorithm().getName())) {
+                throw new VerificationException("Unsupported \"alg\" " + header.getAlgorithm().getName());
+            }
 
-        String iss = signedClaims.getIssuer();
-        EtsiIdentifier issuer;
+            SidRpv3SignatureVerifier.AuthTokenSignatureValidationParams validationParams =
+                SidRpv3SignatureVerifier.createAuthTokenValidationParams(sidSignatureParamsJsonBase64Url);
+
+            SidRpv3SignatureVerifier.verify(
+                signedJWT.getSignature().toString(),
+                cert.getPublicKey(),
+                validationParams,
+                rpName,
+                schemeName,
+                createRpChallenge(signedJWT)
+            );
+        } else {
+            MidSignatureVerifier.verify(signedJWT, cert);
+        }
+
+        return createResponse(claimsSet, sdjwt, etsiIdentifier);
+    }
+
+    private TokenVerificationResponse createResponse(
+        JWTClaimsSet claimsSet, SDJWT sdjwt,
+        EtsiIdentifier etsiIdentifier
+    ) throws VerificationException {
+        Map<String, Object> verifiedDecodedClaims = decodeSdJwtClaims(
+            claimsSet,
+            sdjwt.getDisclosures()
+        );
+
+        return new TokenVerificationResponse(
+            URI.create(getSingleAudArrayElementAsString(verifiedDecodedClaims)),
+            etsiIdentifier
+        );
+    }
+
+    private String createRpChallenge(SignedJWT signedJWT) {
         try {
-            if (!iss.startsWith(EtsiIdentifier.PREFIX)) {
-                throw new VerificationException("Only identifiers starting with " + EtsiIdentifier.PREFIX
-                    + " are supported.  \"iss\" \"" + iss + "\"");
-            }
-            issuer = new EtsiIdentifier(iss); // etsi/PNOEE-30303039914
-        } catch (InvalidEtsiSemanticsIdenfierException e) {
-            throw new VerificationException("Invalid \"iss\" \"" + iss + "\"", e);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] rpChallengeBytes = digest.digest(signedJWT.getSigningInput());
+            return Base64.getEncoder().encodeToString(rpChallengeBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-
-        // check that "iss" matches certificate
-        // iss is in format etsi/PNOEE-30303039914
-        // x5c serialnumber PNOEE-30303039914
-        if (!issuer.getSemanticsIdentifier().equals(pubKeyId)) {
-            throw new VerificationException("iss semantics identifier doesn't match to x5c serialnumber ("
-                + issuer.getSemanticsIdentifier() + "!=" + pubKeyId + ")");
-        }
-
-        if (tokens_log.isDebugEnabled()) {
-            tokens_log.debug("Claims: {}", signedClaimsMap);
-            tokens_log.debug("Disclosures: {}", sdJwt.getDisclosures().stream()
-                .map(d -> d.digest() + ": " + d.getJson()).toList());
-        }
-
-        List<Disclosure> disclosures = sdJwt.getDisclosures();
-
-        for (Disclosure disclosure : disclosures) {
-            if (log.isDebugEnabled()) {
-                log.debug("disclosure: ({}) {}={}",
-                    disclosure.digest(),
-                    disclosure.getClaimName(),
-                    disclosure.getClaimValue());
-            }
-        }
-
-        SDObjectDecoder decoder = new SDObjectDecoder();
-
-        // initial jwt contains "_sd" and "_sd_alg"
-        // {iss=etsi/PNOEE-30303039914, _sd=[dtGzdbCMa_byJAeCW-I0UYpxmtJZyFcszns8dsAYWTE], _sd_alg=sha-256}
-        //
-        // First disclosure represents the "aud" field, second disclosure values in the "aud" array.
-        //
-        // SDObjectDecoder.decode works recursively, so a single decode operation will result in:
-        // {
-        // iss=etsi/PNOEE-30303039914,
-        // aud=[https://cdoc-ccs.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3?nonce=59..b6]
-        // }
-        return decoder.decode(signedClaimsMap, disclosures);
     }
 }
