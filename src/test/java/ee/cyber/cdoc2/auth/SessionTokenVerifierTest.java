@@ -48,7 +48,7 @@ public class SessionTokenVerifierTest {
             TestData.createTestIssuerTrustStoreFromCerts(List.of(
                 ROOT_CERT_G1E,
                 ISSUING_CERT_EID_Q_2024E)),
-            true,
+            false,
             CLOCK_SESSION_TOKEN_NOT_EXPIRED
         );
     }
