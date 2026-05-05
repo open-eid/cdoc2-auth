@@ -60,7 +60,7 @@ class AuthTokenVerifierTest {
                 ROOT_CERT_G1E,
                 ISSUING_CERT_EID_Q_2024E
             )),
-            true
+            false
         );
     }
 
