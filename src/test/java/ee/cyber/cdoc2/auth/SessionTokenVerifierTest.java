@@ -92,7 +92,7 @@ public class SessionTokenVerifierTest {
     void verifyTokenFailWithIssuingCertMissing() throws Exception {
         SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(ROOT_CERT_G1E)),
-            true,
+            false,
             CLOCK_SESSION_TOKEN_NOT_EXPIRED
         );
 
@@ -113,7 +113,7 @@ public class SessionTokenVerifierTest {
     void verifyTokenFailWhenTokenExpired() throws Exception {
         SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(ISSUING_CERT_EID_Q_2024E)),
-            true,
+            false,
             CLOCK_SESSION_TOKEN_EXPIRED
         );
 
@@ -134,7 +134,7 @@ public class SessionTokenVerifierTest {
     void verifyTokenFailWhenTokenIssuedInFuture() throws Exception {
         SessionTokenVerifier sessionTokenVerifier = new SessionTokenVerifier(
             TestData.createTestIssuerTrustStoreFromCerts(List.of(ISSUING_CERT_EID_Q_2024E)),
-            true,
+            false,
             CLOCK_SESSION_TOKEN_INVALID_ISSUANCE
         );
 
