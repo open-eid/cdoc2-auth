@@ -186,11 +186,13 @@ public class SessionTokenVerifierTest {
             new TokenCertPair(
                 "SID",
                 SID_SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
-                SID_SIGNING_CERTIFICATE_BASE64URL),
+                SID_SIGNING_CERTIFICATE_BASE64URL
+            ),
             new TokenCertPair(
                 "MID",
                 MID_SESSION_TOKEN_WITH_ALL_DISCLOSURES_BASE64URL,
-                MID_SIGNING_CERTIFICATE_BASE64URL)
+                MID_SIGNING_CERTIFICATE_BASE64URL
+            )
         );
     }
 
