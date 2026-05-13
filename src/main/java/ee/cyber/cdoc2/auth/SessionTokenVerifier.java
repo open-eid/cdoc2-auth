@@ -54,7 +54,7 @@ public class SessionTokenVerifier {
     /**
      * Verifies: JWT signature with provided jwk, certificate chain, JWT sub match with
      * certificate subject, issuance time not in the future, expiry time not in the past, correct
-     * typ, SID signature included with token.
+     * typ, SID signature (if included with token).
      * Disclosed aud array must have exactly one element.
      * On successful verification returns a response object containing: a single session nonce
      * URI, ETSI identifier parsed from the token 'sub' claim.
@@ -107,11 +107,13 @@ public class SessionTokenVerifier {
             tokenIdentity
         );
 
-        SessionTokenSignatureValidationParams validationParams =
-            createSessionTokenValidationParams(signedJWT);
-        PublicKey certPublicKey = cert.getPublicKey();
+        if (isSidToken(claimsSet)) {
+            SessionTokenSignatureValidationParams validationParams =
+                createSessionTokenValidationParams(claimsSet);
+            PublicKey certPublicKey = cert.getPublicKey();
 
-        SidRpv3SignatureVerifier.verify(certPublicKey, validationParams);
+            SidRpv3SignatureVerifier.verify(certPublicKey, validationParams);
+        }
 
         Map<String, Object> verifiedDecodedClaims = decodeSdJwtClaims(
             claimsSet,
@@ -145,7 +147,6 @@ public class SessionTokenVerifier {
         }
     }
 
-
     private JWSVerifier createJwsVerifierForJwk(JWK jwk) throws VerificationException {
         try {
             if (KeyType.RSA == jwk.getKeyType()) {
@@ -163,5 +164,9 @@ public class SessionTokenVerifier {
         }
 
         throw new VerificationException("Unsupported JWK type");
+    }
+
+    private boolean isSidToken(JWTClaimsSet claimsSet) {
+        return claimsSet.getClaim("signature") != null;
     }
 }

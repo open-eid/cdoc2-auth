@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.6.0]
+### Features
+* Session token verification for the Mobile-ID usecase
+
+## [0.5.0]
+### Features
+* Session token verification for the Smart-ID usecase
+* Smart-ID RPv3 signature verification for auth tokens
+
 ## [0.3.3] First public release
 
 ## [0.3.3-SNAPSHOT] Improvements to 0.3.2-SNAPSHOT

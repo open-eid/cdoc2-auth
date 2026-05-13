@@ -133,11 +133,9 @@ public final class SidRpv3SignatureVerifier {
     }
 
     static SessionTokenSignatureValidationParams createSessionTokenValidationParams(
-        SignedJWT signedJWT
+        JWTClaimsSet claimsSet
     ) throws VerificationException {
         try {
-            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-
             SidRpv3SignatureVerifier.SidSignature sidSignature = OBJECT_MAPPER.convertValue(
                 claimsSet.getClaim("signature"),
                 SidRpv3SignatureVerifier.SidSignature.class
