@@ -123,13 +123,20 @@ public class ShareAccessData {
 
     /**
      * Parse server base url from full /key-shares url
-     * @param url full /key-shares url, example https://cdoc-ccs.ria.ee:443/base/key-shares/123?nonce=649de"
+     * @param url full /key-shares url, examples:
+     *            https://cdoc-ccs.ria.ee:8443/base/key-shares/123?nonce=649de"
+     *            https://cdoc-ccs.ria.ee/base/key-shares/123?nonce=649de
      * @return part url that is before /key-shares
      * @throws MalformedURLException
      */
     private static URL parseServerBaseUrl(URL url) throws MalformedURLException {
         String path = url.getPath();
-        String serverBaseUrl = url.getProtocol() + "://" + url.getHost() + ":" + url.getPort()
+        int port = url.getPort();
+        String portString = port == -1
+            ? ""
+            : ":" + port;
+
+        String serverBaseUrl = url.getProtocol() + "://" + url.getHost() + portString
             + path.substring(0, path.indexOf(KEY_SHARES_EP));
         return new URL(serverBaseUrl);
     }
