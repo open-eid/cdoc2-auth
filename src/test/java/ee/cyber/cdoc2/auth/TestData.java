@@ -316,6 +316,33 @@ public final class TestData {
         SfDzzBLc5+6TqgQTOG7GaZk2diMkn03iLdHGFrh8ML+mXG9SjEPI
         -----END CERTIFICATE-----""";
 
+    //TEST of SK ID Solutions EID-Q 2021E
+    //Validity end: Sun Jul 20 14:57:23 EEST 2036
+    //https://www.skidsolutions.eu/resources/certificates/
+    static final X509Certificate ISSUING_CERT_EID_Q_2021E =
+        X509CertUtils.parse(Base64.getDecoder().decode(
+            "MIIDozCCAwWgAwIBAgIQU+FdGn4AyGFg9rok5E6z7DAKBggqhkjOPQQDAzBuMQsw" +
+            "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
+            "DA5OVFJFRS0xMDc0NzAxMzEpMCcGA1UEAwwgVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
+            "bnMgUk9PVCBHMUUwHhcNMjEwNzIwMTE1NzIzWhcNMzYwNzIwMTE1NzIzWjBxMQsw" +
+            "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
+            "DA5OVFJFRS0xMDc0NzAxMzEsMCoGA1UEAwwjVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
+            "bnMgRUlELVEgMjAyMUUwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT0wf3NUdjxWoIe" +
+            "dN+ZK4hTPhTuwv03xhWhp34p4qGIZIaM+XxZc4/3dScM4CtnHniCOZoUgCysvkgb" +
+            "GLh56xmMrmY/xy/3ZMk8M2JeU2NliKeZfeTAMObH6BtptPz00JSjggFjMIIBXzAf" +
+            "BgNVHSMEGDAWgBTiHN5j3L74hH4BOy5LgLHhf9Xx5jAdBgNVHQ4EFgQUScfc7QYU" +
+            "osdtnKbP11L9aOXoBBQwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8C" +
+            "AQAwbAYIKwYBBQUHAQEEYDBeMCIGCCsGAQUFBzABhhZodHRwOi8vZGVtby5zay5l" +
+            "ZS9vY3NwMDgGCCsGAQUFBzAChixodHRwOi8vYy5zay5lZS9URVNUX1NLX1JPT1Rf" +
+            "RzFfMjAyMUUuZGVyLmNydDA5BgNVHR8EMjAwMC6gLKAqhihodHRwOi8vYy5zay5l" +
+            "ZS9URVNUX1NLX1JPT1RfRzFfMjAyMUUuY3JsMFAGA1UdIARJMEcwRQYEVR0gADA9" +
+            "MDsGCCsGAQUFBwIBFi9odHRwczovL3d3dy5za2lkc29sdXRpb25zLmV1L2VuL3Jl" +
+            "cG9zaXRvcnkvQ1BTLzAKBggqhkjOPQQDAwOBiwAwgYcCQgD8bAhs1OuTDgWPYHQj" +
+            "22k67f4m2fgBWH1EBiN5fKNCKRf6m+zDjxiEBrVfEt1Ld1stFwSMUB43VP1AvW8P" +
+            "4BwIIQJBCWQhLih0OjxBjd4vYRpkJYQF6YCv4uB6Y7/No/k8jOFaBFHCLX2uytuq" +
+            "cWfH8kJRPSEtpBZacnFHoqFztE4786Q="
+        ));
+
     //TEST of SK ID Solutions EID-Q 2024E
     //Validity end: 2039.05.31 13:01:21
     //https://www.skidsolutions.eu/resources/certificates/
