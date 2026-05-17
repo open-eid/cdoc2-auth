@@ -20,6 +20,7 @@ import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
+import static ee.cyber.cdoc2.auth.Constants.ES_256_ALGORITHM_NAME;
 import static ee.cyber.cdoc2.auth.Constants.RP_V3_SIGNATURE_ALGORITHM_NAME;
 import static ee.cyber.cdoc2.auth.TokenVerifierUtil.*;
 
@@ -43,27 +44,27 @@ public class AuthTokenVerifier {
      * On successful verification returns a response object containing: a single auth nonce
      * URI, ETSI identifier parsed from the token 'iss' claim.
      *
-     * @param tokenBase64Url                  session token in BASE64URL encoding
-     * @param certBase64Url                   signing certificate in BASE64URL encoding
-     * @param sidSignatureParamsJsonBase64Url parameters for SID RpV3 signature verification.
-     *                                        {@code null} when veryfying MID signature.
-     * @param rpName                          Relying party name for SID RpV3 signature
-     *                                        verification. {@code null} when veryfying MID
-     *                                        signature.
-     * @param schemeName                      Scheme name for SID RpV3 signature verification.
-     *                                        {@code null} when veryfying MID signature.
+     * @param tokenBase64Url                       session token in BASE64URL encoding
+     * @param certBase64Url                        signing certificate in BASE64URL encoding
+     * @param sidAuthTokenVerificationParams       parameters for SID RpV3 signature verification.
+     *                                             {@code null} when veryfying MID signature.
+     * @param midAuthTokenRpCountersignatureParams RP countersignature params for MID-signed auth
+     *                                             tokens. null for SID-signed tokens
      * @return Response object
-     * @throws VerificationException
+     * @throws VerificationException Verification exception with message
      */
     public TokenVerificationResponse verify(
         String tokenBase64Url,
         String certBase64Url,
-        String sidSignatureParamsJsonBase64Url,
-        String rpName,
-        String schemeName
+        SidAuthTokenVerificationParams sidAuthTokenVerificationParams,
+        RpHttpSignatureVerifier.RpHttpSignatureParams midAuthTokenRpCountersignatureParams
     ) throws VerificationException {
-        Objects.requireNonNull(tokenBase64Url);
-        Objects.requireNonNull(certBase64Url);
+        validateInputParams(
+            tokenBase64Url,
+            certBase64Url,
+            sidAuthTokenVerificationParams,
+            midAuthTokenRpCountersignatureParams
+        );
 
         X509Certificate cert = X509CertUtils.parse(Base64.getUrlDecoder().decode(certBase64Url));
 
@@ -90,24 +91,31 @@ public class AuthTokenVerifier {
             tokenIdentity
         );
 
-        if (sidSignatureParamsJsonBase64Url != null) {
+        if (sidAuthTokenVerificationParams != null) {
             if (!RP_V3_SIGNATURE_ALGORITHM_NAME.equals(header.getAlgorithm().getName())) {
                 throw new VerificationException("Unsupported \"alg\" " + header.getAlgorithm().getName());
             }
 
             SidRpv3SignatureVerifier.AuthTokenSignatureValidationParams validationParams =
-                SidRpv3SignatureVerifier.createAuthTokenValidationParams(sidSignatureParamsJsonBase64Url);
+                SidRpv3SignatureVerifier.createAuthTokenValidationParams(
+                    sidAuthTokenVerificationParams.sidSignatureParamsJsonBase64Url
+                );
 
             SidRpv3SignatureVerifier.verify(
                 signedJWT.getSignature().toString(),
                 cert.getPublicKey(),
                 validationParams,
-                rpName,
-                schemeName,
+                sidAuthTokenVerificationParams.rpName,
+                sidAuthTokenVerificationParams.schemeName,
                 createRpChallenge(signedJWT)
             );
         } else {
+            if (!ES_256_ALGORITHM_NAME.equals(header.getAlgorithm().getName())) {
+                throw new VerificationException("Unsupported \"alg\" " + header.getAlgorithm().getName());
+            }
+
             MidSignatureVerifier.verify(signedJWT, cert);
+            RpHttpSignatureVerifier.verify(midAuthTokenRpCountersignatureParams);
         }
 
         return createResponse(claimsSet, sdjwt, etsiIdentifier);
@@ -128,6 +136,25 @@ public class AuthTokenVerifier {
         );
     }
 
+    private void validateInputParams(
+        String tokenBase64Url,
+        String certBase64Url,
+        SidAuthTokenVerificationParams sidAuthTokenVerificationParams,
+        RpHttpSignatureVerifier.RpHttpSignatureParams midAuthTokenRpCountersignatureParams
+    ) throws VerificationException {
+        Objects.requireNonNull(tokenBase64Url);
+        Objects.requireNonNull(certBase64Url);
+        if (sidAuthTokenVerificationParams == null && midAuthTokenRpCountersignatureParams == null) {
+            throw new VerificationException("One of SID or MID verification params must be " +
+                "provided");
+        }
+
+        if (sidAuthTokenVerificationParams != null && midAuthTokenRpCountersignatureParams != null) {
+            throw new VerificationException("Both SID and MID verification params must not be " +
+                "provided at the same time");
+        }
+    }
+
     private String createRpChallenge(SignedJWT signedJWT) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -136,5 +163,12 @@ public class AuthTokenVerifier {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public record SidAuthTokenVerificationParams(
+        String sidSignatureParamsJsonBase64Url,
+        String rpName,
+        String schemeName
+    ) {
     }
 }
