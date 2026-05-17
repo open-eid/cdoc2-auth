@@ -143,11 +143,11 @@ public class AuthTokenVerifier {
         String tokenBase64Url,
         String certBase64Url,
         SidAuthTokenVerificationParams sidAuthTokenVerificationParams,
-        RpHttpSignatureVerifier.RpHttpSignatureParams midAuthTokenRpCountersignatureParams
+        RpHttpSignatureVerifier.RpHttpSignatureParams rpCountersignatureParams
     ) throws VerificationException {
         Objects.requireNonNull(tokenBase64Url);
         Objects.requireNonNull(certBase64Url);
-        if (sidAuthTokenVerificationParams == null && midAuthTokenRpCountersignatureParams == null) {
+        if (sidAuthTokenVerificationParams == null && rpCountersignatureParams == null) {
             throw new VerificationException("One of SID RPv3 or RP countersignature verification "
                 + "params must be provided");
         }
