@@ -74,9 +74,9 @@ class AuthTokenVerifierTest {
     private static final String CS_RP_SIGNED_HASH = "sj2RtSo7c1tx+J00KWWkzyv4iQ2L2cuX0InnFFi+GAQ=";
     private static final String CS_RP_NAME = "DEMO";
     private static final String CS_SIGNATURE_INPUT =
-        "rp-counter-signature=(\"x-rp-signed-hash\" \"x-rp-name\");created=1779011296;keyid=\"rp-server-ec-key-2026\"";
+        "rp-sig=(\"x-rp-signed-hash\" \"x-rp-name\");created=1779011296;keyid=\"rp-server-ec-key-2026\"";
     private static final String CS_SIGNATURE =
-        "rp-counter-signature=:nt5aITnpc8JjVrOYw8q46bNieq9L7y8gBjw+rJJ7BoY4X3h8BL5PwwcUBzl70iTOvikGCBOmpjbDY1661EqMMA==:";
+        "rp-sig=:nt5aITnpc8JjVrOYw8q46bNieq9L7y8gBjw+rJJ7BoY4X3h8BL5PwwcUBzl70iTOvikGCBOmpjbDY1661EqMMA==:";
 
     private AuthTokenVerifier defaultAuthTokenVerifier;
 
@@ -122,28 +122,8 @@ class AuthTokenVerifierTest {
         );
 
         assertTrue(exception.getMessage()
-                .contains("One of SID or MID verification params must be provided"),
-            "Actual message: " + exception.getMessage());
-    }
-
-    @Test
-    void verifySTokenFailWhenBothSidMidParamsProvided() {
-        VerificationException exception = assertThrows(VerificationException.class,
-            () -> defaultAuthTokenVerifier.verify(
-                SID_AUTH_TOKEN.getSdJwt(),
-                SID_SIGNING_CERTIFICATE_BASE64URL,
-                new AuthTokenVerifier.SidAuthTokenVerificationParams(
-                    SIGNATURE_VALIDATION_PARAMS_BASE64URL,
-                    "DEMO",
-                    "smart-id-demo"
-                ),
-                getDefaultHttpSignatureParams()
-            )
-        );
-
-        assertTrue(exception.getMessage()
-                .contains("Both SID and MID verification params must not be provided"
-                    + " at the same time"),
+                .contains("One of SID RPv3 or RP countersignature "
+                    + "verification params must be provided"),
             "Actual message: " + exception.getMessage());
     }
 

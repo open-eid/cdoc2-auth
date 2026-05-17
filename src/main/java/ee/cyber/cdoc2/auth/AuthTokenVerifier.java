@@ -44,12 +44,12 @@ public class AuthTokenVerifier {
      * On successful verification returns a response object containing: a single auth nonce
      * URI, ETSI identifier parsed from the token 'iss' claim.
      *
-     * @param tokenBase64Url                       session token in BASE64URL encoding
-     * @param certBase64Url                        signing certificate in BASE64URL encoding
-     * @param sidAuthTokenVerificationParams       parameters for SID RpV3 signature verification.
-     *                                             {@code null} when veryfying MID signature.
-     * @param midAuthTokenRpCountersignatureParams RP countersignature params for MID-signed auth
-     *                                             tokens. null for SID-signed tokens
+     * @param tokenBase64Url                 session token in BASE64URL encoding
+     * @param certBase64Url                  signing certificate in BASE64URL encoding
+     * @param sidAuthTokenVerificationParams parameters for SID RpV3 signature verification.
+     *                                       {@code null} when veryfying MID signature.
+     * @param rpCountersignatureParams       RP countersignature params. can be null
+     *                                       for SID Rpv3-signed tokens
      * @return Response object
      * @throws VerificationException Verification exception with message
      */
@@ -57,13 +57,13 @@ public class AuthTokenVerifier {
         String tokenBase64Url,
         String certBase64Url,
         SidAuthTokenVerificationParams sidAuthTokenVerificationParams,
-        RpHttpSignatureVerifier.RpHttpSignatureParams midAuthTokenRpCountersignatureParams
+        RpHttpSignatureVerifier.RpHttpSignatureParams rpCountersignatureParams
     ) throws VerificationException {
         validateInputParams(
             tokenBase64Url,
             certBase64Url,
             sidAuthTokenVerificationParams,
-            midAuthTokenRpCountersignatureParams
+            rpCountersignatureParams
         );
 
         X509Certificate cert = X509CertUtils.parse(Base64.getUrlDecoder().decode(certBase64Url));
@@ -115,7 +115,10 @@ public class AuthTokenVerifier {
             }
 
             MidSignatureVerifier.verify(signedJWT, cert);
-            RpHttpSignatureVerifier.verify(midAuthTokenRpCountersignatureParams);
+        }
+
+        if (rpCountersignatureParams != null) {
+            RpHttpSignatureVerifier.verify(rpCountersignatureParams);
         }
 
         return createResponse(claimsSet, sdjwt, etsiIdentifier);
@@ -145,13 +148,8 @@ public class AuthTokenVerifier {
         Objects.requireNonNull(tokenBase64Url);
         Objects.requireNonNull(certBase64Url);
         if (sidAuthTokenVerificationParams == null && midAuthTokenRpCountersignatureParams == null) {
-            throw new VerificationException("One of SID or MID verification params must be " +
-                "provided");
-        }
-
-        if (sidAuthTokenVerificationParams != null && midAuthTokenRpCountersignatureParams != null) {
-            throw new VerificationException("Both SID and MID verification params must not be " +
-                "provided at the same time");
+            throw new VerificationException("One of SID RPv3 or RP countersignature verification "
+                + "params must be provided");
         }
     }
 

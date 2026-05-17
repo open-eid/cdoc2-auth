@@ -19,7 +19,7 @@ import com.nimbusds.jose.jwk.JWK;
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
 public class RpHttpSignatureVerifier {
-    private static final String RP_SIGNATURE_LABEL = "rp-counter-signature";
+    private static final String RP_SIGNATURE_LABEL = "rp-sig";
 
     private RpHttpSignatureVerifier() {
         // utility class
