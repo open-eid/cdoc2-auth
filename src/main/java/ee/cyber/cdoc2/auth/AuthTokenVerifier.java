@@ -47,7 +47,7 @@ public class AuthTokenVerifier {
      * @param tokenBase64Url                 session token in BASE64URL encoding
      * @param certBase64Url                  signing certificate in BASE64URL encoding
      * @param sidAuthTokenVerificationParams parameters for SID RpV3 signature verification.
-     *                                       {@code null} when veryfying MID signature.
+     *                                       {@code null} when verifying MID signature.
      * @param rpCountersignatureParams       RP countersignature params. can be null
      *                                       for SID Rpv3-signed tokens
      * @return Response object
