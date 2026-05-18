@@ -111,7 +111,7 @@ class AuthTokenVerifierTest {
     }
 
     @Test
-    void verifySTokenFailWhenNoSidMidParamsProvided() {
+    void verifyTokenFailWhenNoSidMidParamsProvided() {
         VerificationException exception = assertThrows(VerificationException.class,
             () -> defaultAuthTokenVerifier.verify(
                 SID_AUTH_TOKEN.getSdJwt(),
