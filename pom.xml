@@ -26,6 +26,7 @@
         <logback.version>1.5.32</logback.version>
         <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
         <junit-jupiter.version>5.10.3</junit-jupiter.version>
+        <http-message-signatures.version>1.8</http-message-signatures.version>
     </properties>
 
     <profiles>
@@ -121,6 +122,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.authlete</groupId>
+            <artifactId>http-message-signatures</artifactId>
+            <version>${http-message-signatures.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>com.nimbusds</groupId>
             <artifactId>nimbus-jose-jwt</artifactId>
             <version>${nimbus-jose-jwt.version}</version>
@@ -129,7 +136,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.20.2</version>
+            <version>2.21.3</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

@@ -3,6 +3,7 @@
 ## [0.6.0]
 ### Features
 * Session token verification for the Mobile-ID usecase
+* HTTP signature verification for auth tokens
 
 ## [0.5.0]
 ### Features
