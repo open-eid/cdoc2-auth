@@ -1,5 +1,9 @@
 # Changelog
 
+## [unreleased]
+### Improvements
+* RSA support for MID Auth tokens
+
 ## [0.6.0]
 ### Features
 * Session token verification for the Mobile-ID usecase

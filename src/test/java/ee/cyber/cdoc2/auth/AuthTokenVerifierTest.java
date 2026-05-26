@@ -30,10 +30,15 @@ class AuthTokenVerifierTest {
 
     private static final String MID_AUTH_TOKEN_WITH_FILTERED_DISCLOSURES_BASE64URL =
         "eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJFUzI1NiJ9.eyJpc3MiOiJldHNpL1BOT0VFLTUxMzA3MTQ5NTYwIiwiX3NkIjpbInlxQ3pheElCOWZZaHRTb001RGdEazBadV9YWkZuQWRIOW1abFNrRm42ZnciXSwiX3NkX2FsZyI6InNoYS0yNTYifQ.Qig3n9nZ2k6-jfItUFRh_p05BT6sSbAVzFulVtodFlYLaWCUJhW9XWKLF73DmLd6YyY7P7j2MRYAZaBO-FEWoA~WyJWb21KX1lnbFBjWUpycTlMYldBZS13IiwiYXVkIixbeyIuLi4iOiJDU2R5cWxJUzdqbDNZbl9wZjZib3FEQjVFVFFwMnU2Nnp6UW96eVdMSEJVIn0seyIuLi4iOiI2RW50ODJYQWp3US1kTDNrZmxqTUp6aEdVdTJNcC1wNi1fSFlOakhSb3NZIn1dXQ~WyJETWpFbUF1d2pCNTBhNTdHTmhlaGpnIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mi9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNTA2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlPUFBRUNBd1FGQmdjSUNRb0xEQTROX3ciXQ~";
-    private static final String MID_SIGNING_CERTIFICATE_BASE64URL =
+    private static final String MID_EC_SIGNING_CERTIFICATE_BASE64URL =
         "MIIDqDCCAy6gAwIBAgIQB9W11BzBABj-0d_AZx6UHzAKBggqhkjOPQQDAjBxMQswCQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEsMCoGA1UEAwwjVEVTVCBvZiBTSyBJRCBTb2x1dGlvbnMgRUlELVEgMjAyMUUwHhcNMjQwNjEyMDY0NTI4WhcNMjkwNjE2MDY0NTI3WjCBlTELMAkGA1UEBhMCRUUxLzAtBgNVBAMMJk1BUlkgw4ROTixPJ0NPTk5Fxb0txaBVU0xJSyBURVNUTlVNQkVSMSUwIwYDVQQEDBxPJ0NPTk5Fxb0txaBVU0xJSyBURVNUTlVNQkVSMRIwEAYDVQQqDAlNQVJZIMOETk4xGjAYBgNVBAUTEVBOT0VFLTUxMzA3MTQ5NTYwMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEWlV1aVSXw6WhagWmFmXE_oe-0R1xZzrHyoiVlgKpGiJ8cwIQLogRGQnWY7NwgQvRHCBmsl99bj57h7SWnd03m6OCAYEwggF9MAkGA1UdEwQCMAAwHwYDVR0jBBgwFoAUScfc7QYUosdtnKbP11L9aOXoBBQwcAYIKwYBBQUHAQEEZDBiMDMGCCsGAQUFBzAChidodHRwOi8vYy5zay5lZS9URVNUX0VJRC1RXzIwMjFFLmRlci5jcnQwKwYIKwYBBQUHMAGGH2h0dHA6Ly9haWEuZGVtby5zay5lZS9laWRxMjAyMWUweAYDVR0gBHEwbzAIBgYEAI96AQIwYwYJKwYBBAHOHxIBMFYwVAYIKwYBBQUHAgEWSGh0dHBzOi8vd3d3LnNraWRzb2x1dGlvbnMuZXUvcmVzb3VyY2VzL2NlcnRpZmljYXRpb24tcHJhY3RpY2Utc3RhdGVtZW50LzA0BgNVHR8ELTArMCmgJ6AlhiNodHRwOi8vYy5zay5lZS90ZXN0X2VpZC1xXzIwMjFlLmNybDAdBgNVHQ4EFgQUj8KjnXvGQJCRYOd5LVfPku7QsZwwDgYDVR0PAQH_BAQDAgeAMAoGCCqGSM49BAMCA2gAMGUCMQCocXWDbBnkM3WEyBdv9Vm0A1MNRv08WrR192dRBcX42Kz5oiH0SdHRJv2ffeuEeSwCMEw2tSA3ClJv233Dl7rIYU_T6UG2NQhvDD5FhnP0umZRmVfAUQ6eVcmU8AhFtNJjwg==";
     private static final SdJwtWrapper MID_AUTH_TOKEN =
         new SdJwtWrapper(MID_AUTH_TOKEN_WITH_FILTERED_DISCLOSURES_BASE64URL);
+
+    private static final String MID_AUTH_TOKEN_WITH_FILTERED_DISCLOSURES_FOR_RSA_CERT_BASE64URL =
+        "eyJ0eXAiOiJ2bmQuY2RvYzIuYXV0aC10b2tlbi52MStzZC1qd3QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJldHNpL1BOT0VFLTM5OTAxMDE5OTkyIiwiX3NkIjpbInJsR2ZHclhicDFEY0FnQUtIaGlJejFQNVdzRE9lanFTSVJKN3dmWllmMkUiXSwiX3NkX2FsZyI6InNoYS0yNTYifQ.Iyb8Mb2tjSiAAkdUhhBLxGvLknXfXPfsrSrjOvsaUbBVv9cLPB4EdPoPR7zDFV-w5htgTvwlT4M-e86-AET_yTnDD0T6NalNQM2MZx5WwLqxGijHD9F90BEjJt6KBgNKOBflmwAMdUaxxrbmMR_DRU8GI28AzAkhsFRp7CneIHsD4_MDE3uYFnDT387h3ssJxQauu6u4j7vfLfKm5G6xH9OhxfNBZqgPWaop64eqAOCFtT-cVJ0LKalqb94ISaiybnUTmUVx6eJaf2NQz8ylBUNse0alzd0Nd68Gg0cQrf04keDIZ32IG2ser9Oa0b2NwmU1PVX5AG1o_ZVqai7urQ~WyI0bzVYU2VTbi1LdVQ0eExJZU0xWWd3IiwiYXVkIixbeyIuLi4iOiJYMEJETHRfZW1HQVJMa2NYeXItdHNTa3oxRUxGdVJvdnJSTUdfeUlxRTA0In0seyIuLi4iOiJJak9KNC1wVDJEcldHSmMxWjlKQmpXbUYwdjQzM3lCLVNWb0hsckRzbVY0In1dXQ~WyJEelVOU1o2MEtHT2k3M0tzX0VfMWdRIiwiaHR0cHM6Ly9sb2NhbGhvc3Q6ODQ0Mi9rZXktc2hhcmVzL2ZmMDEwMjAzMDQwNTA2MDcwODA5MGEwYjBjMGUwZGZmP25vbmNlPUFBRUNBd1FGQmdjSUNRb0xEQTROX3ciXQ~";
+    private static final String MID_RSA_SIGNING_CERTIFICATE_BASE64URL =
+        "MIIESTCCA9CgAwIBAgIQYoxNTpjf-fpF9YJoFuzfXDAKBggqhkjOPQQDAjBxMQswCQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRhDA5OVFJFRS0xMDc0NzAxMzEsMCoGA1UEAwwjVEVTVCBvZiBTSyBJRCBTb2x1dGlvbnMgRUlELVEgMjAyMUUwHhcNMjUwNTA1MTAzMTAzWhcNMzAwNTA5MTAzMTAyWjBwMQswCQYDVQQGEwJFRTEiMCAGA1UEAwwZVEVTVE5VTUJFUixSU0EsMzk5MDEwOTk5MjETMBEGA1UEBAwKVEVTVE5VTUJFUjEMMAoGA1UEKgwDUlNBMRowGAYDVQQFExFQTk9FRS0zOTkwMTAxOTk5MjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAMPtigPkrty3_gJXsvsmDkAAYFwiHpRIAKrhqnbwZ6YpF-qsQZQc-8wdZxb6pPVCGGPI4c_nC2Q223Dqt9wOkcL9drwGbLKX3Vlr1pOAaBLYDZ8ci1MW0a91_IAStgS7ieUsUT51xll_J0l79B0MMuV3Op5ZGa3O9XzsVO3OLrY9PkiFWrNjAgydcVKCp3PEoMYRpC0fMNGImRloJa9tltR2yYwIXXKFLP1_OzfJYOcMYcn09fZNjx03HeSiA_W1P3SmRxP8XmpZTPJUxiags2Hwl2KP3VZlOi9_eCBW2-3dvVa3eAmK5tR4Bb0WYzcPE9NEG8uftKcU1LSrqZ4eC_8CAwEAAaOCAX4wggF6MAkGA1UdEwQCMAAwHwYDVR0jBBgwFoAUScfc7QYUosdtnKbP11L9aOXoBBQwcAYIKwYBBQUHAQEEZDBiMDMGCCsGAQUFBzAChidodHRwOi8vYy5zay5lZS9URVNUX0VJRC1RXzIwMjFFLmRlci5jcnQwKwYIKwYBBQUHMAGGH2h0dHA6Ly9haWEuZGVtby5zay5lZS9laWRxMjAyMWUweAYDVR0gBHEwbzAIBgYEAI96AQIwYwYJKwYBBAHOHxIBMFYwVAYIKwYBBQUHAgEWSGh0dHBzOi8vd3d3LnNraWRzb2x1dGlvbnMuZXUvcmVzb3VyY2VzL2NlcnRpZmljYXRpb24tcHJhY3RpY2Utc3RhdGVtZW50LzA0BgNVHR8ELTArMCmgJ6AlhiNodHRwOi8vYy5zay5lZS90ZXN0X2VpZC1xXzIwMjFlLmNybDAdBgNVHQ4EFgQU47SEND7ponm7GcYaTxJkydVBQKcwCwYDVR0PBAQDAgeAMAoGCCqGSM49BAMCA2cAMGQCMF8CysKa-wUz8DtLXpaMOozw2_3X2sxC7AgkKbE7iRqZ9RRL9t9K1RBHSwz7YW71YwIwVZWlg2MhdqODcbWTOF4uqS29o9ETkPflLwrqiaCW5qQj2qEffILiNpgY7Adyq366";
 
     private static final String SIGNATURE_VALIDATION_PARAMS_BASE64URL =
         Base64.getUrlEncoder().encodeToString("""
@@ -103,11 +108,25 @@ class AuthTokenVerifierTest {
 
     @Test
     void verifyMidTokenSuccess() throws Exception {
-        TokenVerificationResponse response = verifyMidToken(MID_AUTH_TOKEN.getSdJwt());
+        TokenVerificationResponse response = verifyDefaultMidToken(MID_AUTH_TOKEN.getSdJwt());
 
         assertNotNull(response);
         assertTrue(response.nonceUri().getPath().contains(AUTH_NONCE_URI_PATH));
         assertEquals("PNOEE-51307149560", response.identifier().getSemanticsIdentifier());
+    }
+
+    @Test
+    void verifyMidTokenRSACertSuccess() throws Exception {
+        TokenVerificationResponse response = defaultAuthTokenVerifier.verify(
+            MID_AUTH_TOKEN_WITH_FILTERED_DISCLOSURES_FOR_RSA_CERT_BASE64URL,
+            MID_RSA_SIGNING_CERTIFICATE_BASE64URL,
+            null,
+            getDefaultHttpSignatureParams()
+        );
+
+        assertNotNull(response);
+        assertTrue(response.nonceUri().getPath().contains(AUTH_NONCE_URI_PATH));
+        assertEquals("PNOEE-39901019992", response.identifier().getSemanticsIdentifier());
     }
 
     @Test
@@ -174,7 +193,7 @@ class AuthTokenVerifierTest {
     @Test
     void verifyMidTokenFailWhenUnsupportedTyp() {
         VerificationException exception = assertThrows(VerificationException.class,
-            () -> verifyMidToken(MID_AUTH_TOKEN.replaceValue("typ", "UNKNOWN_TYPE"))
+            () -> verifyDefaultMidToken(MID_AUTH_TOKEN.replaceValue("typ", "UNKNOWN_TYPE"))
         );
 
         assertTrue(exception.getMessage()
@@ -185,7 +204,7 @@ class AuthTokenVerifierTest {
     @Test
     void verifyMidTokenFailWhenUnsupportedAlg() {
         VerificationException exception = assertThrows(VerificationException.class,
-            () -> verifyMidToken(MID_AUTH_TOKEN.replaceValue("alg", "UNKNOWN_ALG"))
+            () -> verifyDefaultMidToken(MID_AUTH_TOKEN.replaceValue("alg", "UNKNOWN_ALG"))
         );
 
         assertTrue(exception.getMessage()
@@ -196,7 +215,7 @@ class AuthTokenVerifierTest {
     @Test
     void verifyMidTokenFailWhenIssDoesNotMatchCertificate() {
         VerificationException exception = assertThrows(VerificationException.class,
-            () -> verifyMidToken(MID_AUTH_TOKEN.replaceValue("iss", "etsi/PNOEE-40504040999"))
+            () -> verifyDefaultMidToken(MID_AUTH_TOKEN.replaceValue("iss", "etsi/PNOEE-40504040999"))
         );
 
         assertTrue(exception.getMessage()
@@ -207,7 +226,7 @@ class AuthTokenVerifierTest {
     @Test
     void verifyMidTokenFailWhenIssDoesNotStartWithEtsi() {
         VerificationException exception = assertThrows(VerificationException.class,
-            () -> verifyMidToken(MID_AUTH_TOKEN.replaceValue("iss", "PNOEE-40504040001"))
+            () -> verifyDefaultMidToken(MID_AUTH_TOKEN.replaceValue("iss", "PNOEE-40504040001"))
         );
 
         assertTrue(exception.getMessage()
@@ -228,10 +247,10 @@ class AuthTokenVerifierTest {
         );
     }
 
-    private TokenVerificationResponse verifyMidToken(String token) throws Exception {
+    private TokenVerificationResponse verifyDefaultMidToken(String token) throws Exception {
         return defaultAuthTokenVerifier.verify(
             token,
-            MID_SIGNING_CERTIFICATE_BASE64URL,
+            MID_EC_SIGNING_CERTIFICATE_BASE64URL,
             null,
             getDefaultHttpSignatureParams()
         );

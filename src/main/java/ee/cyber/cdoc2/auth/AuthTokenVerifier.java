@@ -6,6 +6,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -13,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.authlete.sd.SDJWT;
+import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -20,7 +22,6 @@ import com.nimbusds.jwt.SignedJWT;
 
 import ee.cyber.cdoc2.auth.exception.VerificationException;
 
-import static ee.cyber.cdoc2.auth.Constants.ES_256_ALGORITHM_NAME;
 import static ee.cyber.cdoc2.auth.Constants.RP_V3_SIGNATURE_ALGORITHM_NAME;
 import static ee.cyber.cdoc2.auth.TokenVerifierUtil.*;
 
@@ -110,7 +111,10 @@ public class AuthTokenVerifier {
                 createRpChallenge(signedJWT)
             );
         } else {
-            if (!ES_256_ALGORITHM_NAME.equals(header.getAlgorithm().getName())) {
+            if (!List.of(
+                JWSAlgorithm.ES256,
+                JWSAlgorithm.RS256
+            ).contains(header.getAlgorithm())) {
                 throw new VerificationException("Unsupported \"alg\" " + header.getAlgorithm().getName());
             }
 
