@@ -6,7 +6,7 @@
 
     <groupId>ee.cyber.cdoc2</groupId>
     <artifactId>cdoc2-auth-token</artifactId>
-    <version>0.7.0</version>
+    <version>0.7.1</version>
     <packaging>jar</packaging>
     <description>
         CDOC2 auth token library, generates/validates session and authentication tokens.
@@ -23,9 +23,9 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <sd-jwt.version>1.8</sd-jwt.version>
-        <logback.version>1.5.32</logback.version>
-        <nimbus-jose-jwt.version>10.9</nimbus-jose-jwt.version>
-        <junit-jupiter.version>5.10.3</junit-jupiter.version>
+        <logback.version>1.5.38</logback.version>
+        <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
+        <junit-jupiter.version>6.1.2</junit-jupiter.version>
         <http-message-signatures.version>1.8</http-message-signatures.version>
     </properties>
 
@@ -104,7 +104,7 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.16</version>
+            <version>2.0.18</version>
             <scope>compile</scope>
         </dependency>
 
@@ -136,7 +136,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.21.3</version>
+            <version>2.22.1</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.1]
+### Improvements
+* Dependency updates
+
 ## [0.7.0]
 ### Improvements
 * RSA support for MID Auth tokens
