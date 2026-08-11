@@ -82,7 +82,13 @@ public class SessionTokenVerifier {
 
         certVerifier.checkCertificate(cert);
 
-        SDJWT sdjwt = SDJWT.parse(tokenBase64Url);
+        SDJWT sdjwt;
+        try {
+            sdjwt = SDJWT.parse(tokenBase64Url);
+        } catch (IllegalArgumentException e) {
+            throw new VerificationException("Malformed session token in x-cdoc2-session-token");
+        }
+
         SignedJWT signedJWT = getSignedJwt(sdjwt.getCredentialJwt());
 
         JWSHeader header = signedJWT.getHeader();
