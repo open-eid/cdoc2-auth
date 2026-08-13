@@ -76,9 +76,19 @@ public class SessionTokenVerifier {
 
         X509Certificate cert = X509CertUtils.parse(Base64.getUrlDecoder().decode(certBase64Url));
 
+        if (cert == null) {
+            throw new VerificationException("Malformed certificate in x-cdoc2-session-x5c");
+        }
+
         certVerifier.checkCertificate(cert);
 
-        SDJWT sdjwt = SDJWT.parse(tokenBase64Url);
+        SDJWT sdjwt;
+        try {
+            sdjwt = SDJWT.parse(tokenBase64Url);
+        } catch (IllegalArgumentException e) {
+            throw new VerificationException("Malformed session token in x-cdoc2-session-token");
+        }
+
         SignedJWT signedJWT = getSignedJwt(sdjwt.getCredentialJwt());
 
         JWSHeader header = signedJWT.getHeader();

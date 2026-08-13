@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.7.2]
+### Improvements
+* Improve the exception handling
+
 ## [0.7.1]
 ### Improvements
 * Dependency updates
