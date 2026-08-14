@@ -1,6 +1,6 @@
 package ee.cyber.cdoc2.auth;
 
-import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdenfierException;
+import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdentifierException;
 
 import java.util.Objects;
 
@@ -32,12 +32,12 @@ public class EtsiIdentifier {
     /**
      * Etsi Semantics Identifier. Format "etsi/:semantics-identifier" as in ETSI319412 - 1
      * @param etsi etsi semantic identifier, for example "etsi/PNOEE-48010010101"
-     * @throws InvalidEtsiSemanticsIdenfierException when etsi is not in expected format
+     * @throws InvalidEtsiSemanticsIdentifierException when etsi is not in expected format
      * @see <a href="https://github.com/SK-EID/smart-id-documentation?tab=readme-ov-file#2322-etsisemantics-identifier">
      *     Etsi Semantics Identifier
      *     </a>
      */
-    public EtsiIdentifier(String etsi) throws InvalidEtsiSemanticsIdenfierException {
+    public EtsiIdentifier(String etsi) throws InvalidEtsiSemanticsIdentifierException {
         validateEtsiSemanticsIdentifier(etsi);
         this.etsiSemanticsIdentifier = etsi; // Full identifier with prefix "etsi/PNOEE-48010010101"
 
@@ -77,29 +77,29 @@ public class EtsiIdentifier {
         return this.etsiSemanticsIdentifier.substring(IDENTITY_TYPE_START);
     }
 
-    private void validateEtsiSemanticsIdentifier(String etsi) throws InvalidEtsiSemanticsIdenfierException {
+    private void validateEtsiSemanticsIdentifier(String etsi) throws InvalidEtsiSemanticsIdentifierException {
         Objects.requireNonNull(etsi);
 
         if (!etsi.startsWith(PREFIX)) {
-            throw new InvalidEtsiSemanticsIdenfierException(etsi + "doesn't start with " + PREFIX);
+            throw new InvalidEtsiSemanticsIdentifierException(etsi + "doesn't start with " + PREFIX);
         }
 
         if (etsi.length() < MIN_LEN) {
-            throw new InvalidEtsiSemanticsIdenfierException(etsi + " is too short");
+            throw new InvalidEtsiSemanticsIdentifierException(etsi + " is too short");
         }
 
         if (etsi.charAt(HYPHEN_POS) != '-') {
-            throw new InvalidEtsiSemanticsIdenfierException("- not found in expected position for " + etsi);
+            throw new InvalidEtsiSemanticsIdentifierException("- not found in expected position for " + etsi);
         }
     }
 
-    private IdentityType parseIdentityType(String etsi) throws InvalidEtsiSemanticsIdenfierException {
+    private IdentityType parseIdentityType(String etsi) throws InvalidEtsiSemanticsIdentifierException {
         String type = etsi.substring(IDENTITY_TYPE_START, IDENTITY_TYPE_END);
 
         try {
             return IdentityType.valueOf(type);
         } catch (IllegalArgumentException e) {
-            throw new InvalidEtsiSemanticsIdenfierException("Unknown identity type \"" + type + "\"");
+            throw new InvalidEtsiSemanticsIdentifierException("Unknown identity type \"" + type + "\"");
         }
     }
 
@@ -111,7 +111,7 @@ public class EtsiIdentifier {
     private String parseCountryCode(String etsi) {
         String cc =  etsi.substring(COUNTRY_CODE_START, COUNTRY_CODE_END);
         if (!cc.matches("[A-Z]+")){
-            throw new InvalidEtsiSemanticsIdenfierException("Country code \""
+            throw new InvalidEtsiSemanticsIdentifierException("Country code \""
                 + cc + "\" should contain only uppercase characters ");
         }
         return cc;

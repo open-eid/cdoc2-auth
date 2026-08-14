@@ -15,8 +15,8 @@ import static ee.cyber.cdoc2.auth.Constants.KEY_SHARES_EP;
 import static ee.cyber.cdoc2.auth.Constants.NONCE;
 
 /**
- * Represents /key-shares/${shareId} access data used in auth ticket.
- * Auth ticket encodes share access data as URL that has the following format:
+ * Represents /key-shares/${shareId} access data used in auth token.
+ * Auth token encodes share access data as URL that has the following format:
  * "https://host:443/key-shares/${shareId}?nonce=${nonce}"
  * For example "https://cdoc-ccs.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3?nonce=649a44d6cd9827cae3f3df04fd5eda98246d2dde":
  * <ul>

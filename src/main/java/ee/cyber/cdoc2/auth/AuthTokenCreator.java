@@ -185,13 +185,13 @@ public class AuthTokenCreator {
     }
 
     /**
-     * Create ticket (sdjwt)
+     * Create token (sdjwt)
      * @param index shareAccessData element index from signed shareAccessData
-     * @return ticket as SDJWT
+     * @return token as SDJWT
      */
-    public String createTicket(int index) {
+    public String createToken(int index) {
         if (this.signedJWT == null) {
-            throw new IllegalStateException("jwt not signed, can't create ticket (did you call sign()?)");
+            throw new IllegalStateException("jwt not signed, can't create tokent (did you call sign()?)");
         }
 
         if ((index < 0) || (index > audDisclosureArray.size())) {
@@ -214,17 +214,17 @@ public class AuthTokenCreator {
     }
 
     /**
-     * Create ticket (sdjwt) for share id
+     * Create token (sdjwt) for share id
      * @param shareId shareId from signed shareAccessData
-     * @return ticket as SDJWT
+     * @return token as SDJWT
      * @throws IllegalArgumentException if shareId was not part signed payload
      */
-    public String createTicketForShareId(String shareId) {
+    public String createTokenForShareId(String shareId) {
         Objects.requireNonNull(shareId);
 
         for (int i = 0; i < shareAccessData.length; i++) {
             if (shareId.equals(shareAccessData[i].getShareId())) {
-                return createTicket(i);
+                return createToken(i);
             }
         }
 

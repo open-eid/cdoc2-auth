@@ -3,6 +3,7 @@
 ## [0.7.2]
 ### Improvements
 * Improve the exception handling
+* Code cleanup
 
 ## [0.7.1]
 ### Improvements
