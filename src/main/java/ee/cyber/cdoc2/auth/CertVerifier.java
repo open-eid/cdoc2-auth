@@ -1,9 +1,5 @@
 package ee.cyber.cdoc2.auth;
 
-import ee.cyber.cdoc2.auth.exception.VerificationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -18,6 +14,11 @@ import java.security.cert.PKIXParameters;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ee.cyber.cdoc2.auth.exception.VerificationException;
 
 public class CertVerifier {
     private static final Logger log = LoggerFactory.getLogger(CertVerifier.class);
@@ -45,6 +46,7 @@ public class CertVerifier {
      * <li> Validates certificate issuer using trustStore
      * <li> Check that certificate is not expired
      * </ul>
+     *
      * @param cert certificate to validate
      * @throws VerificationException
      */
@@ -66,13 +68,14 @@ public class CertVerifier {
             CertPathValidator validator = CertPathValidator.getInstance("PKIX");
 
             validator.validate(certPath, pkixParams); // if the CertPath does not validate,
-                                                      // an CertPathValidatorException will be thrown
+            // an CertPathValidatorException will be thrown
             Date now = new Date();
             if (now.after(cert.getNotAfter())) {
                 throw new VerificationException("Certificate expired on " + cert.getNotAfter());
             }
 
-        } catch (NoSuchAlgorithmException | CertificateException | CertPathValidatorException | KeyStoreException
+        } catch (NoSuchAlgorithmException | CertificateException | CertPathValidatorException |
+                 KeyStoreException
                  | InvalidAlgorithmParameterException e) {
             throw new VerificationException("Certificate validation error", e);
         }

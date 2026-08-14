@@ -10,24 +10,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 import java.util.Base64;
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
-import com.nimbusds.jose.crypto.ECDSASigner;
-import com.nimbusds.jose.crypto.RSASSASigner;
-import com.nimbusds.jose.jwk.ECKey;
-import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.util.X509CertUtils;
-
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Input test data utility class.
@@ -322,25 +312,25 @@ public final class TestData {
     static final X509Certificate ISSUING_CERT_EID_Q_2021E =
         X509CertUtils.parse(Base64.getDecoder().decode(
             "MIIDozCCAwWgAwIBAgIQU+FdGn4AyGFg9rok5E6z7DAKBggqhkjOPQQDAzBuMQsw" +
-            "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
-            "DA5OVFJFRS0xMDc0NzAxMzEpMCcGA1UEAwwgVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
-            "bnMgUk9PVCBHMUUwHhcNMjEwNzIwMTE1NzIzWhcNMzYwNzIwMTE1NzIzWjBxMQsw" +
-            "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
-            "DA5OVFJFRS0xMDc0NzAxMzEsMCoGA1UEAwwjVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
-            "bnMgRUlELVEgMjAyMUUwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT0wf3NUdjxWoIe" +
-            "dN+ZK4hTPhTuwv03xhWhp34p4qGIZIaM+XxZc4/3dScM4CtnHniCOZoUgCysvkgb" +
-            "GLh56xmMrmY/xy/3ZMk8M2JeU2NliKeZfeTAMObH6BtptPz00JSjggFjMIIBXzAf" +
-            "BgNVHSMEGDAWgBTiHN5j3L74hH4BOy5LgLHhf9Xx5jAdBgNVHQ4EFgQUScfc7QYU" +
-            "osdtnKbP11L9aOXoBBQwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8C" +
-            "AQAwbAYIKwYBBQUHAQEEYDBeMCIGCCsGAQUFBzABhhZodHRwOi8vZGVtby5zay5l" +
-            "ZS9vY3NwMDgGCCsGAQUFBzAChixodHRwOi8vYy5zay5lZS9URVNUX1NLX1JPT1Rf" +
-            "RzFfMjAyMUUuZGVyLmNydDA5BgNVHR8EMjAwMC6gLKAqhihodHRwOi8vYy5zay5l" +
-            "ZS9URVNUX1NLX1JPT1RfRzFfMjAyMUUuY3JsMFAGA1UdIARJMEcwRQYEVR0gADA9" +
-            "MDsGCCsGAQUFBwIBFi9odHRwczovL3d3dy5za2lkc29sdXRpb25zLmV1L2VuL3Jl" +
-            "cG9zaXRvcnkvQ1BTLzAKBggqhkjOPQQDAwOBiwAwgYcCQgD8bAhs1OuTDgWPYHQj" +
-            "22k67f4m2fgBWH1EBiN5fKNCKRf6m+zDjxiEBrVfEt1Ld1stFwSMUB43VP1AvW8P" +
-            "4BwIIQJBCWQhLih0OjxBjd4vYRpkJYQF6YCv4uB6Y7/No/k8jOFaBFHCLX2uytuq" +
-            "cWfH8kJRPSEtpBZacnFHoqFztE4786Q="
+                "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
+                "DA5OVFJFRS0xMDc0NzAxMzEpMCcGA1UEAwwgVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
+                "bnMgUk9PVCBHMUUwHhcNMjEwNzIwMTE1NzIzWhcNMzYwNzIwMTE1NzIzWjBxMQsw" +
+                "CQYDVQQGEwJFRTEbMBkGA1UECgwSU0sgSUQgU29sdXRpb25zIEFTMRcwFQYDVQRh" +
+                "DA5OVFJFRS0xMDc0NzAxMzEsMCoGA1UEAwwjVEVTVCBvZiBTSyBJRCBTb2x1dGlv" +
+                "bnMgRUlELVEgMjAyMUUwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT0wf3NUdjxWoIe" +
+                "dN+ZK4hTPhTuwv03xhWhp34p4qGIZIaM+XxZc4/3dScM4CtnHniCOZoUgCysvkgb" +
+                "GLh56xmMrmY/xy/3ZMk8M2JeU2NliKeZfeTAMObH6BtptPz00JSjggFjMIIBXzAf" +
+                "BgNVHSMEGDAWgBTiHN5j3L74hH4BOy5LgLHhf9Xx5jAdBgNVHQ4EFgQUScfc7QYU" +
+                "osdtnKbP11L9aOXoBBQwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8C" +
+                "AQAwbAYIKwYBBQUHAQEEYDBeMCIGCCsGAQUFBzABhhZodHRwOi8vZGVtby5zay5l" +
+                "ZS9vY3NwMDgGCCsGAQUFBzAChixodHRwOi8vYy5zay5lZS9URVNUX1NLX1JPT1Rf" +
+                "RzFfMjAyMUUuZGVyLmNydDA5BgNVHR8EMjAwMC6gLKAqhihodHRwOi8vYy5zay5l" +
+                "ZS9URVNUX1NLX1JPT1RfRzFfMjAyMUUuY3JsMFAGA1UdIARJMEcwRQYEVR0gADA9" +
+                "MDsGCCsGAQUFBwIBFi9odHRwczovL3d3dy5za2lkc29sdXRpb25zLmV1L2VuL3Jl" +
+                "cG9zaXRvcnkvQ1BTLzAKBggqhkjOPQQDAwOBiwAwgYcCQgD8bAhs1OuTDgWPYHQj" +
+                "22k67f4m2fgBWH1EBiN5fKNCKRf6m+zDjxiEBrVfEt1Ld1stFwSMUB43VP1AvW8P" +
+                "4BwIIQJBCWQhLih0OjxBjd4vYRpkJYQF6YCv4uB6Y7/No/k8jOFaBFHCLX2uytuq" +
+                "cWfH8kJRPSEtpBZacnFHoqFztE4786Q="
         ));
 
     //TEST of SK ID Solutions EID-Q 2024E
@@ -459,108 +449,5 @@ public final class TestData {
 
     public static X509Certificate loadTestCert(String certPem) {
         return X509CertUtils.parse(certPem);
-    }
-
-    public static String generateTestAuthTicketWithRsaKey(
-        String semanticsIdentifier,
-        String serverUrl,
-        String shareId,
-        String nonce
-    ) throws CertificateException, JOSEException, ParseException {
-        return generateTestAuthTicket(
-            semanticsIdentifier,
-            serverUrl,
-            shareId,
-            nonce,
-            SID_PUBLIC_KEY_ALGORITHM,
-            TEST_RSA_CERT_PEM
-        );
-    }
-
-    public static String generateTestAuthTicketWithEcdsaKey(
-        String semanticsIdentifier,
-        String serverUrl,
-        String shareId,
-        String nonce
-    ) throws CertificateException, JOSEException, ParseException {
-        return generateTestAuthTicket(
-            semanticsIdentifier,
-            serverUrl,
-            shareId,
-            nonce,
-            MID_PUBLIC_KEY_ALGORITHM,
-            TEST_ECDSA_CERT_PEM
-        );
-    }
-
-    /**
-     * Generate Auth ticket with TestData.TEST_RSAKEY.
-     *
-     * @param semanticsIdentifier example PNOEE-30303039914
-     * @param serverUrl           server URL
-     * @param shareId             share ID
-     * @param nonce               nonce
-     * @param pubKeyAlgorithm     public key algorithm
-     * @param certificate         certificate
-     * @return authentication ticket
-     */
-    private static String generateTestAuthTicket(
-        String semanticsIdentifier,
-        String serverUrl,
-        String shareId,
-        String nonce,
-        JWSAlgorithm.Family pubKeyAlgorithm,
-        String certificate
-    ) throws CertificateException, JOSEException, ParseException {
-
-        X509Certificate cert = X509CertUtils.parseWithException(certificate);
-        String testSemanticsIdentifier = SIDCertificateUtil.getSemanticsIdentifier(cert); //PNOEE-30303039914
-        EtsiIdentifier etsi = new EtsiIdentifier("etsi/" + testSemanticsIdentifier);
-
-        assertTrue(etsi.getSemanticsIdentifier().equals(semanticsIdentifier),
-            "Only " + testSemanticsIdentifier + " is supported for auth ticket generation");
-
-        AuthTokenCreator token = AuthTokenCreator.builder()
-            .withEtsiIdentifier(etsi) // "iss" field etsi/PNOEE-30303039914
-            .withShareAccessData(new ShareAccessData(
-                serverUrl,
-                shareId,
-                nonce))
-            .withShareAccessData(new ShareAccessData(
-                "https://ccs.another-organization.org:443",
-                "5BAE4603-C33C-4425-B301-125F2ACF9B1E",
-                "9d23660840b427f405009d970d269770417bc769"))
-            .build();
-
-
-        signAuthToken(token, pubKeyAlgorithm);
-
-        return token.createTicketForShareId(shareId);
-    }
-
-    private static void signAuthToken(AuthTokenCreator token, JWSAlgorithm.Family pubKeyAlgorithm)
-        throws JOSEException, CertificateException, ParseException {
-
-        if (pubKeyAlgorithm.equals(SID_PUBLIC_KEY_ALGORITHM)) {
-            JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_RSAKEY);
-            RSAKey privateKey = jwk.toRSAKey();
-            RSASSASigner jwsSigner = new RSASSASigner(privateKey) {
-                // Smart-ID JWSSigner supports only RS256
-                @Override
-                public Set<JWSAlgorithm> supportedJWSAlgorithms() {
-                    return Set.of(JWSAlgorithm.RS256);
-                }
-            };
-            token.sign(jwsSigner);
-            return;
-        } else if (pubKeyAlgorithm.equals(MID_PUBLIC_KEY_ALGORITHM)) {
-            JWK jwk = JWK.parseFromPEMEncodedObjects(TEST_ECDSA_KEY);
-            ECKey privateKey = jwk.toECKey();
-            ECDSASigner jwsSigner = new ECDSASigner(privateKey);
-            token.sign(jwsSigner, JWSAlgorithm.ES256);
-            return;
-        }
-
-        throw new CertificateException("Not supported public key algorithm " + pubKeyAlgorithm);
     }
 }

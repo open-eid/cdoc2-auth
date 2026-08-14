@@ -1,14 +1,14 @@
 # cdoc-auth
 
-* Implements `x-cdoc2-auth-ticket` header parameter for 
+* Implements `x-cdoc2-auth-token` header parameter for 
   [GET /key-shares/\${shareId}](https://github.com/open-eid/cdoc2-openapi/cdoc2-key-shares-openapi.yaml)
 * Supports ES256 and RS256 algorithms required to support [Mobile-ID](https://github.com/SK-EID/MID) 
   and [Smart-ID](https://github.com/SK-EID/smart-id-documentation) (other algorithms not tested)
 
 Used by:
 
-* [cdoc2-java-ref-impl](https://github.com/open-eid/cdoc2-java-ref-impl) for auth-ticket creation
-* [cdoc2-shares-server](https://github.com/open-eid/cdoc2-shares-server) for auth-ticket validation
+* [cdoc2-java-ref-impl](https://github.com/open-eid/cdoc2-java-ref-impl) for auth-token creation
+* [cdoc2-shares-server](https://github.com/open-eid/cdoc2-shares-server) for auth-token validation
 
 
 ## Building
@@ -77,7 +77,7 @@ and build & publish maven packages.
 * Official documentation: [SD-JWT based CDOC2 authentication protocol](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch06_ID_authentication_protocol/) (TODO: update to final 2.0, when available)
 * `/key-shares` OAS specification can be found here: https://github.com/open-eid/cdoc2-openapi
 
-In short, cdoc2 key-shares auth ticket is used to authenticate against multiple key-share servers by signing
+In short, cdoc2 key-shares auth token is used to authenticate against multiple key-share servers by signing
 authenticated data ones and not revealing auth data to other servers. For this 
 [SDJWT](https://datatracker.ietf.org/doc/draft-ietf-oauth-selective-disclosure-jwt/) format is used.
 
@@ -88,12 +88,12 @@ SdJWT in encoded format:
 
 To decode sd-jwt use [sdjwt.org](https://sdjwt.org/)
 
-To generate auth-ticket client must first generate `nonce` for each `KeyShare` object accessed using
+To generate auth-token client must first generate `nonce` for each `KeyShare` object accessed using
 [\${serverBaseUrl}/key-shares/\${shareId}/nonce](https://github.com/open-eid/cdoc2-openapi/blob/facc1371e3dc39a426541f8a153083c8a6d4539c/cdoc2-key-shares-openapi.yaml#L87) endpoint.
 
 ### JWT_header
 
-JWT header for cdoc2 auth ticket:
+JWT header for cdoc2 auth token:
 ```json
 {
   "typ": "vnd.cdoc2.auth-token.v1+sd-jwt",
@@ -129,7 +129,7 @@ Before signing, "aud" will be replaced with a digest value as specified in
 
 Values of "aud" will be selectively disclosed to CSS server that has shareID accessed.
 
-sd-jwt (auth ticket) for accessing key-share `https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3` 
+sd-jwt (auth token) for accessing key-share `https://css.ria.ee:443/key-shares/9EE90F2D-D946-4D54-9C3D-F4C68F7FFAE3` 
 with `nonce` `59b314d4815f21f73a0b9168cecbd5773cc694b6`
 
 (use [sdjwt.org](https://sdjwt.org/) to decode)
@@ -172,9 +172,9 @@ After disclosing Disclosures from sd-jwt, JWT body will be:
 }
 ```
 
-Other rules to validate auth ticket:
+Other rules to validate auth token:
 
-[Verifying SD-JWT (verifying authentication ticket)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch06_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-ticket)
+[Verifying SD-JWT (verifying authentication token)](https://open-eid.github.io/CDOC2/2.0-Draft/03_system_architecture/ch06_ID_authentication_protocol/#verifying-sd-jwt-verifying-authentication-token)
 
 For additional details see tests in `src/test/java/`
 

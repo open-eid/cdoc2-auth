@@ -1,6 +1,6 @@
 package ee.cyber.cdoc2.auth;
 
-import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdenfierException;
+import ee.cyber.cdoc2.auth.exception.InvalidEtsiSemanticsIdentifierException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -22,35 +22,35 @@ class EtsiIdentifierTest {
 
     @Test
     void shoudFailWithInvalidIdentityType() {
-        Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
+        Assertions.assertThrows(InvalidEtsiSemanticsIdentifierException.class, () -> {
             new EtsiIdentifier("etsi/XYZEE-30303039914");
         });
     }
 
     @Test
     void shoudFailWithNotStartingWithEtsi() {
-        Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
+        Assertions.assertThrows(InvalidEtsiSemanticsIdentifierException.class, () -> {
             new EtsiIdentifier("PNOEE-30303039914");
         });
     }
 
     @Test
     void shoudFailWithWrongHyphenPos() {
-        Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
+        Assertions.assertThrows(InvalidEtsiSemanticsIdentifierException.class, () -> {
             new EtsiIdentifier("etsi/PNOEUR-30303039914");
         });
     }
 
     @Test
     void shoudFailForTooShort() {
-        Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
+        Assertions.assertThrows(InvalidEtsiSemanticsIdentifierException.class, () -> {
             new EtsiIdentifier("etsi/PNOEE-");
         });
     }
 
     @Test
     void shoudFailForInvalidCountryCode() {
-        Assertions.assertThrows(InvalidEtsiSemanticsIdenfierException.class, () -> {
+        Assertions.assertThrows(InvalidEtsiSemanticsIdentifierException.class, () -> {
             new EtsiIdentifier("etsi/PNOE0-30303039914");
         });
     }
